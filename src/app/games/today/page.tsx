@@ -3,6 +3,8 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { TodayGamesClient } from "@/components/match/TodayGamesClient";
 
+export const dynamic = 'force-dynamic';
+
 export default async function TodayGamesPage() {
     // Fetch fixtures for the next 10 days for full coverage across all 7 leagues
     const fixtures = await sportmonksService.getFixtures(10);

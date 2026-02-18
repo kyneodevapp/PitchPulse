@@ -3,6 +3,8 @@ import { MatchCard } from "@/components/match/MatchCard";
 import { sportmonksService, Match } from "@/lib/services/prediction";
 import Link from "next/link";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
     // Fetch fixtures for the next 5 days
     const fixtures = await sportmonksService.getFixtures(5);
