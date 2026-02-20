@@ -809,10 +809,10 @@ class SportMonksService {
         ];
     }
 
-    async getMarketAnalyses(fixtureId: number, home: string = "Home", away: string = "Away"): Promise<MarketAnalysis[]> {
+    async getMarketAnalyses(fixtureId: number, home: string = "Home", away: string = "Away", providedOdds: any[] | null = null): Promise<MarketAnalysis[]> {
         const cached = PredictionStore.get(fixtureId);
         // If we have cached markets that looks like our new format, return them
-        if (cached?.markets && cached.markets.length > 5 && cached.markets[0].microDetail?.includes("calibrated")) {
+        if (cached?.markets && cached.markets.length > 5 && cached.markets[0].microDetail?.includes("calibrated") && !providedOdds) {
             return cached.markets;
         }
 
@@ -835,23 +835,34 @@ class SportMonksService {
             };
         });
 
-        // SORT: Impact-Adjusted Probability (Ensures logical Best Bet is at top)
+        // SORT: Value-Driven Synchronization (Favors impactful markets with good odds)
+        const allOdds = providedOdds || [];
         list.sort((a, b) => {
             const getWeight = (outcome: string) => {
                 const o = outcome.toLowerCase();
-                // Proactive markets get a slight boost for sorting visibility
-                if (o.includes("win") || o.includes("btts") || o.includes("over 2.5")) return 1.2;
+                if (o.includes("win") || o.includes("btts") || o.includes("over 2.5")) return 1.35; // Value bonus
                 if (o.includes("over 1.5") || o.includes("double chance")) return 1.1;
-                if (o.includes("under")) return 0.85;
+                if (o.includes("under")) return 0.8; // Penalize safe/boring markets
                 return 1.0;
             };
+
+            // If we have odds, use Probability * Odds * Utility
+            if (allOdds.length > 0) {
+                const oddsA = this.filterOdds(allOdds, a.prediction, home, away);
+                const oddsB = this.filterOdds(allOdds, b.prediction, home, away);
+                const valA = (oddsA[0]?.odds_value || 1.1) * a.probability * getWeight(a.prediction);
+                const valB = (oddsB[0]?.odds_value || 1.1) * b.probability * getWeight(b.prediction);
+                return valB - valA;
+            }
+
+            // Fallback to Impact-Adjusted Probability
             const scoreA = a.probability * getWeight(a.prediction);
             const scoreB = b.probability * getWeight(b.prediction);
             return scoreB - scoreA;
         });
 
         const sortedResult = result;
-        // Deterministically set main prediction to the #1 ranked item in analysis
+        // Deterministically set main prediction to the #1 ranked item in analysis grid
         sortedResult.outcome = list[0].prediction;
         sortedResult.confidence = list[0].probability;
 
@@ -1016,10 +1027,9 @@ class SportMonksService {
             return { outcome: candidates[0].outcome, confidence: Math.round(candidates[0].probability) };
         }
 
-        // STRICT DETERMINISTIC SYNC:
-        // We now ignore the "Value Engine" for the main outcome to ensure 100% sync with analysis modal.
-        // We only use fetchFixtureOdds for the odds display, NOT for outcome selection.
-        const analyses = await this.getMarketAnalyses(fixtureId, homeTeam, awayTeam);
+        // VALUE-DRIVEN SYNC:
+        // We fetch the full analysis grid using live odds to determine the #1 rank.
+        const analyses = await this.getMarketAnalyses(fixtureId, homeTeam, awayTeam, allOdds);
         const topBet = analyses[0];
 
         // Find odds for the top bet
