@@ -130,19 +130,41 @@ class SportMonksService {
         return data?.crest || null;
     }
 
+    private async fetchAllPages(endpoint: string, params: Record<string, string> = {}): Promise<any[]> {
+        const allData: any[] = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+            const data = await this.fetchSportMonks(endpoint, {
+                ...params,
+                per_page: "50",
+                page: String(page),
+            });
+
+            if (!data?.data || data.data.length === 0) break;
+
+            allData.push(...data.data);
+            hasMore = data.pagination?.has_more === true;
+            page++;
+        }
+
+        return allData;
+    }
+
     async getFixtures(days: number = 10): Promise<Match[]> {
         const now = new Date();
         const startDate = now.toISOString().split('T')[0];
         const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        const data = await this.fetchSportMonks(`/fixtures/between/${startDate}/${endDate}`, {
+        const allFixtures = await this.fetchAllPages(`/fixtures/between/${startDate}/${endDate}`, {
             include: "participants;league",
             filters: `fixtureLeagues:${this.LEAGUE_IDS.join(',')}`
         });
 
-        if (!data?.data || data.data.length === 0) return [];
+        if (allFixtures.length === 0) return [];
 
-        return data.data.map((f: any) => {
+        return allFixtures.map((f: any) => {
             const home = f.participants.find((p: any) => p.meta.location === "home")?.name || "Home Team";
             const away = f.participants.find((p: any) => p.meta.location === "away")?.name || "Away Team";
 
