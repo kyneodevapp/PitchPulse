@@ -13,6 +13,13 @@ export interface Match {
     confidence?: number;
 }
 
+export interface PastMatch extends Match {
+    home_score: number;
+    away_score: number;
+    status: string;
+    prediction_hit: boolean;
+}
+
 export interface MarketAnalysis {
     marketName: string;
     prediction: string;
@@ -32,8 +39,7 @@ export interface ModelSignal {
 export interface MatchSummary {
     overallConfidence: number;
     summaryText: string;
-    venue?: string;
-    weather?: string;
+
     kickoffTime: string;
     generatedAt?: string;
 }
@@ -189,6 +195,80 @@ class SportMonksService {
         });
     }
 
+    async getPastFixtures(days: number = 3): Promise<PastMatch[]> {
+        const now = new Date();
+        const endDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        const allFixtures = await this.fetchAllPages(`/fixtures/between/${startDate}/${endDate}`, {
+            include: "participants;scores;league",
+            filters: `fixtureLeagues:${this.LEAGUE_IDS.join(',')}`
+        });
+
+        if (allFixtures.length === 0) return [];
+
+        return allFixtures
+            .filter((f: any) => f.state_id === 5) // FT = Full Time
+            .map((f: any) => {
+                const home = f.participants.find((p: any) => p.meta.location === "home")?.name || "Home Team";
+                const away = f.participants.find((p: any) => p.meta.location === "away")?.name || "Away Team";
+
+                // Extract scores from the scores include
+                const homeScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "home")?.score?.goals ?? 0;
+                const awayScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "away")?.score?.goals ?? 0;
+
+                const bestBet = this.calculateBestPrediction(f.id, home, away);
+                const hit = this.evaluatePrediction(bestBet.outcome, homeScore, awayScore, home, away);
+
+                return {
+                    id: f.id,
+                    home_team: home,
+                    away_team: away,
+                    home_logo: f.participants.find((p: any) => p.meta.location === "home")?.image_path || "",
+                    away_logo: f.participants.find((p: any) => p.meta.location === "away")?.image_path || "",
+                    start_time: f.starting_at,
+                    league_name: f.league?.name || "League",
+                    league_id: f.league_id,
+                    date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
+                    is_live: false,
+                    prediction: bestBet.outcome,
+                    confidence: bestBet.confidence,
+                    home_score: homeScore,
+                    away_score: awayScore,
+                    status: "FT",
+                    prediction_hit: hit,
+                };
+            });
+    }
+
+    private evaluatePrediction(prediction: string, homeScore: number, awayScore: number, home: string, away: string): boolean {
+        const totalGoals = homeScore + awayScore;
+        const btts = homeScore > 0 && awayScore > 0;
+        const homeWin = homeScore > awayScore;
+        const awayWin = awayScore > homeScore;
+        const p = prediction.toLowerCase();
+
+        // Compound checks FIRST (most specific → least specific)
+        if (p.includes("btts & over 2.5")) return btts && totalGoals > 2.5;
+        if (p.includes("& btts")) return btts && (p.includes(home.toLowerCase()) ? homeWin : awayWin);
+        if (p.includes("win & over 2.5")) return homeWin && totalGoals > 2.5;
+        if (p.includes("& over 1.5")) return (p.includes(away.toLowerCase()) ? awayWin : homeWin) && totalGoals > 1.5;
+        if (p.includes("home win to nil")) return homeWin && awayScore === 0;
+        if (p.includes("ht/ft")) return homeWin;
+        if (p.includes("double chance")) return awayWin || homeScore === awayScore;
+        if (p.includes("multi-goal 2-4")) return totalGoals >= 2 && totalGoals <= 4;
+
+        // Simple checks AFTER
+        if (p.includes("1st half over 0.5")) return totalGoals > 0;
+        if (p === "both teams to score" || p === "btts") return btts;
+        if (p.includes("over 2.5")) return totalGoals > 2.5;
+        if (p.includes("over 1.5")) return totalGoals > 1.5;
+        if (p.includes("over 0.5")) return totalGoals > 0.5;
+        if (p.includes("under 2.5")) return totalGoals < 2.5;
+
+        return false;
+    }
+
     private calculateBestPrediction(fixtureId: number, home: string, away: string) {
         const rng = new SeededRandom(fixtureId);
 
@@ -232,8 +312,7 @@ class SportMonksService {
         const result = {
             overallConfidence: Math.min(90, 65 + (fixtureId % 25)), // Static 65-90%
             summaryText: summaries[fixtureId % summaries.length],
-            venue: "Emirates Stadium",
-            weather: "12°C, Partly Cloudy",
+
             kickoffTime: "20:00",
             generatedAt: cached?.generatedAt || new Date().toISOString()
         };

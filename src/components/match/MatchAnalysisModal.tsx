@@ -272,14 +272,8 @@ export function MatchAnalysisModal({
                                                 </div>
 
                                                 {/* Match Meta Info */}
-                                                <div className="mt-4 md:mt-12 flex flex-wrap items-center justify-center lg:justify-start gap-2 md:gap-6 text-[9px] md:text-[11px] font-bold uppercase tracking-widest text-white/40">
-                                                    <div className="flex items-center gap-2 bg-white/5 px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border border-white/5">
-                                                        <span className="text-purple-400">VENUE:</span> {matchSummary?.venue}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 bg-white/5 px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border border-white/5">
-                                                        <span className="text-purple-400">WEATHER:</span> {matchSummary?.weather}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 bg-white/5 px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border border-white/5">
+                                                <div className="mt-4 md:mt-12 flex items-center justify-center text-[9px] md:text-[11px] font-bold uppercase tracking-widest text-white/40">
+                                                    <div className="flex items-center gap-1.5 md:gap-2 bg-white/5 px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl border border-white/5">
                                                         <span className="text-purple-400">KICKOFF:</span> {date} • {time}
                                                     </div>
                                                 </div>
