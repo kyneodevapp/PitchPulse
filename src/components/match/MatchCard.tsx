@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { TrendingUp, Clock, Info, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MatchAnalysisModal } from "./MatchAnalysisModal";
 
 interface MatchCardProps {
@@ -36,6 +36,54 @@ export function MatchCard({
     const [homeError, setHomeError] = useState(false);
     const [awayError, setAwayError] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [bet365Odds, setBet365Odds] = useState<number | null>(null);
+    const [bestBookmaker, setBestBookmaker] = useState<{ odds: number; name: string } | null>(null);
+    const [dynamicPrediction, setDynamicPrediction] = useState(prediction);
+    const [dynamicConfidence, setDynamicConfidence] = useState(confidence);
+
+    // Fetch odds lazily on mount
+    useEffect(() => {
+        const fetchOdds = async () => {
+            try {
+                const params = new URLSearchParams({
+                    fixtureId: String(id),
+                    prediction,
+                    homeTeam,
+                    awayTeam,
+                });
+                const resp = await fetch(`/api/odds?${params}`);
+                if (resp.ok) {
+                    const data = await resp.json();
+
+                    // If we have a value-optimized suggestBet, use IT for everything
+                    if (data.suggestedBet) {
+                        setDynamicPrediction(data.suggestedBet.outcome);
+                        setDynamicConfidence(data.suggestedBet.confidence);
+                        setBet365Odds(data.suggestedBet.bet365 || data.suggestedBet.odds || null);
+
+                        // Handle best bookmaker for the NEW prediction
+                        if (data.suggestedBet.best && data.suggestedBet.best.bookmaker !== "bet365") {
+                            setBestBookmaker({
+                                odds: data.suggestedBet.best.odds,
+                                name: data.suggestedBet.best.bookmaker
+                            });
+                        } else {
+                            setBestBookmaker(null);
+                        }
+                    } else {
+                        // Fallback to original prediction odds
+                        if (data.bet365) setBet365Odds(data.bet365);
+                        if (data.best && data.best.bookmaker !== "bet365") {
+                            setBestBookmaker({ odds: data.best.odds, name: data.best.bookmaker });
+                        }
+                    }
+                }
+            } catch {
+                // Odds not available
+            }
+        };
+        fetchOdds();
+    }, [id, prediction, homeTeam, awayTeam]);
 
     return (
         <>
@@ -109,21 +157,34 @@ export function MatchCard({
                     <div className="space-y-4">
                         <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wider gap-4">
                             <span className="text-white/40 font-black tracking-[0.2em] text-[10px] whitespace-nowrap">Best Bet</span>
-                            <span className="text-purple-400 font-bold uppercase tracking-widest text-[10px] text-right line-clamp-1">{prediction}</span>
+                            <div className="flex items-center gap-2 text-right">
+                                <span className="text-purple-400 font-bold uppercase tracking-widest text-[10px] line-clamp-1">{dynamicPrediction}</span>
+                                {bet365Odds && (
+                                    <span className="text-emerald-400 font-black text-[11px] bg-emerald-400/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                        @ {bet365Odds.toFixed(2)}
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: `${confidence}%` }}
+                                animate={{ width: `${dynamicConfidence}%` }}
                                 className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full"
                             />
                         </div>
 
                         <div className="flex items-center justify-between text-[10px] font-black tracking-[0.2em] text-white/40 uppercase">
                             <span>CONFIDENCE</span>
-                            <span className="text-white/60">{confidence}%</span>
+                            <span className="text-white/60">{dynamicConfidence}%</span>
                         </div>
+
+                        {bestBookmaker && bestBookmaker.odds > (bet365Odds || 0) && (
+                            <div className="text-[9px] font-bold text-amber-400/70 text-right tracking-wider">
+                                Best: {bestBookmaker.odds.toFixed(2)} @ {bestBookmaker.name}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -144,6 +205,7 @@ export function MatchCard({
                 homeLogo={homeLogo}
                 awayLogo={awayLogo}
                 leagueName={leagueName}
+                prediction={dynamicPrediction}
                 date={date}
                 time={time}
             />

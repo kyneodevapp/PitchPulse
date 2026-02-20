@@ -20,6 +20,7 @@ interface MatchAnalysisModalProps {
     homeLogo?: string;
     awayLogo?: string;
     leagueName?: string;
+    prediction?: string;
     date?: string;
     time?: string;
 }
@@ -33,6 +34,7 @@ export function MatchAnalysisModal({
     homeLogo,
     awayLogo,
     leagueName,
+    prediction,
     date,
     time
 }: MatchAnalysisModalProps) {
@@ -64,26 +66,30 @@ export function MatchAnalysisModal({
         checkMobile();
         window.addEventListener('resize', checkMobile);
 
-        if (isOpen && markets.length === 0) {
+        if (isOpen) {
             const fetchData = async () => {
                 setIsLoading(true);
-                const [marketData, summaryData, signalsData, oddsData] = await Promise.all([
-                    sportmonksService.getMarketAnalyses(fixtureId),
+                const oddsParams = new URLSearchParams({
+                    fixtureId: String(fixtureId),
+                    ...(prediction ? { prediction, homeTeam, awayTeam } : {}),
+                });
+                const [marketData, summaryData, signalsData, oddsResp] = await Promise.all([
+                    sportmonksService.getMarketAnalyses(fixtureId, homeTeam, awayTeam),
                     sportmonksService.getMatchSummary(fixtureId),
                     sportmonksService.getModelSignals(fixtureId),
-                    sportmonksService.getOddsComparison(fixtureId),
+                    fetch(`/api/odds?${oddsParams}`).then(r => r.ok ? r.json() : { all: [] }),
                 ]);
                 setMarkets(marketData);
                 setMatchSummary(summaryData);
                 setModelSignals(signalsData);
-                setOddsComparison(oddsData);
+                setOddsComparison(oddsResp.all || []);
                 setIsLoading(false);
             };
             fetchData();
         }
 
         return () => window.removeEventListener('resize', checkMobile);
-    }, [isOpen, fixtureId, markets.length]);
+    }, [isOpen, fixtureId, prediction]);
 
     // Prevent scrolling when modal is open
     useEffect(() => {
@@ -351,36 +357,45 @@ export function MatchAnalysisModal({
                                                 </div>
                                             </div>
 
-                                            {/* Best Odds Comparison */}
+                                            {/* Best Odds Comparison — UK Bookmakers */}
                                             {oddsComparison.length > 0 && (
                                                 <div className="space-y-8">
                                                     <div className="flex items-center gap-4">
-                                                        <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">Best Odds</h3>
+                                                        <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">UK Bookmaker Odds</h3>
                                                         <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                                                     </div>
+                                                    {prediction && (
+                                                        <p className="text-[10px] font-bold text-purple-400/60 uppercase tracking-[0.15em]">
+                                                            Odds for: {prediction}
+                                                        </p>
+                                                    )}
                                                     <div className="bg-white/[0.03] border border-white/5 rounded-3xl overflow-hidden">
-                                                        <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-6 py-3 border-b border-white/5">
+                                                        <div className="grid grid-cols-[1fr_auto] gap-4 px-6 py-3 border-b border-white/5">
                                                             <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Bookmaker</span>
-                                                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] text-right">Market</span>
                                                             <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] text-right">Odds</span>
                                                         </div>
-                                                        {oddsComparison.map((odd, idx) => (
-                                                            <div key={idx} className={cn(
-                                                                "grid grid-cols-[1fr_auto_auto] gap-4 px-6 py-4 items-center transition-colors hover:bg-white/[0.03]",
-                                                                idx === 0 ? "bg-emerald-500/5" : "",
-                                                                idx < oddsComparison.length - 1 ? "border-b border-white/5" : ""
-                                                            )}>
-                                                                <div className="flex items-center gap-3">
-                                                                    {idx === 0 && <span className="text-[9px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">BEST</span>}
-                                                                    <span className={cn("text-xs font-bold", idx === 0 ? "text-white" : "text-white/60")}>{odd.bookmaker}</span>
+                                                        {oddsComparison.map((odd, idx) => {
+                                                            const isBet365 = odd.bookmaker === "bet365";
+                                                            const isBest = idx === 0;
+                                                            return (
+                                                                <div key={idx} className={cn(
+                                                                    "grid grid-cols-[1fr_auto] gap-4 px-6 py-4 items-center transition-colors hover:bg-white/[0.03]",
+                                                                    isBest ? "bg-emerald-500/5" : "",
+                                                                    isBet365 && !isBest ? "bg-amber-500/5" : "",
+                                                                    idx < oddsComparison.length - 1 ? "border-b border-white/5" : ""
+                                                                )}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        {isBest && <span className="text-[9px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">BEST</span>}
+                                                                        {isBet365 && !isBest && <span className="text-[9px] font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">★</span>}
+                                                                        <span className={cn("text-xs font-bold", isBest ? "text-white" : isBet365 ? "text-amber-200" : "text-white/60")}>{odd.bookmaker}</span>
+                                                                    </div>
+                                                                    <span className={cn(
+                                                                        "text-sm font-black text-right tabular-nums",
+                                                                        isBest ? "text-emerald-400" : isBet365 ? "text-amber-400" : "text-white/60"
+                                                                    )}>{odd.odds.toFixed(2)}</span>
                                                                 </div>
-                                                                <span className="text-[10px] font-medium text-white/40 text-right">{odd.market}</span>
-                                                                <span className={cn(
-                                                                    "text-sm font-black text-right tabular-nums",
-                                                                    idx === 0 ? "text-emerald-400" : "text-white/60"
-                                                                )}>{odd.odds.toFixed(2)}</span>
-                                                            </div>
-                                                        ))}
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             )}

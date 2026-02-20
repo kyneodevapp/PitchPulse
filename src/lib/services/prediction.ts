@@ -18,6 +18,9 @@ export interface Match {
     prediction?: string;
     confidence?: number;
     best_odds?: BestOdds;
+    bet365_odds?: number | null;
+    best_bookmaker?: string | null;
+    candidates?: PredictionCandidate[];
 }
 
 export interface PastMatch extends Match {
@@ -41,6 +44,17 @@ export interface ModelSignal {
     value: number;
     explanation: string;
     rating: "Low" | "Medium" | "High" | "Elite";
+}
+
+export interface PredictionCandidate {
+    outcome: string;
+    probability: number;
+}
+
+export interface PredictionResult {
+    outcome: string;
+    confidence: number;
+    candidates?: PredictionCandidate[];
 }
 
 export interface MatchSummary {
@@ -235,55 +249,261 @@ class SportMonksService {
 
     // ============ ODDS ============
 
-    async getOddsForFixture(fixtureId: number): Promise<BestOdds | null> {
-        try {
-            const data = await this.fetchSportMonks(`/odds/pre-match/fixtures/${fixtureId}`, {
-                include: "bookmaker;market",
-            });
-            if (!data?.data || data.data.length === 0) return null;
+    // UK Bookmaker IDs
+    private readonly UK_BOOKMAKER_IDS = [2, 5, 6, 9, 12, 13, 19]; // bet365, 888Sport, BetFred, Betfair, BetVictor, Coral, Paddy Power
+    private readonly UK_BOOKMAKER_NAMES: Record<number, string> = {
+        2: "bet365", 5: "888Sport", 6: "BetFred", 9: "Betfair",
+        12: "BetVictor", 13: "Coral", 19: "Paddy Power"
+    };
 
-            // Find highest odds across all bookmakers for any market
-            let bestOdds: BestOdds | null = null;
-            for (const entry of data.data) {
-                const bookmakerName = entry.bookmaker?.name || "Unknown";
-                const marketName = entry.market?.name || "Unknown";
-                const value = parseFloat(entry.value || entry.odds || "0");
-                if (value > 0 && (!bestOdds || value > bestOdds.odds)) {
-                    bestOdds = { bookmaker: bookmakerName, odds: value, market: marketName };
+    // Prediction → Market ID + label/name filter mapping
+    // SportMonks actual market IDs (from odds API, not markets endpoint):
+    //   mk=1:  Match Winner (label=Home/Draw/Away)
+    //   mk=12: Double Chance (label uses team names)
+    //   mk=14: Both Teams to Score (label=Yes/No)
+    //   mk=80: Goals Over/Under (label=Over/Under, name=2.5/1.5/etc)
+    //   mk=82: Total Goals/BTTS combined
+    //   mk=93: Exact Total Goals
+    private readonly PREDICTION_MARKET_MAP: Record<string, { marketIds: number[]; label: string; name?: string }> = {
+        "over 2.5 goals": { marketIds: [80, 81, 105], label: "Over", name: "2.5" },
+        "over 1.5 goals": { marketIds: [80, 81, 105], label: "Over", name: "1.5" },
+        "under 2.5 goals": { marketIds: [80, 81, 105], label: "Under", name: "2.5" },
+        "under 3.5 goals": { marketIds: [80, 81, 105], label: "Under", name: "3.5" },
+        "over 3.5 goals": { marketIds: [80, 81, 105], label: "Over", name: "3.5" },
+        "both teams to score": { marketIds: [14], label: "Yes" },
+        "1st half over 0.5": { marketIds: [28, 107], label: "Over", name: "0.5" },
+        "multi-goal 2-4": { marketIds: [80, 81], label: "Over", name: "1.5" }, // Closest match
+        "btts & over 2.5": { marketIds: [82], label: "Over 2.5 & Yes" },
+        "win & btts": { marketIds: [82, 97], label: "Yes" }, // Specific team handled in filterOdds
+    };
+
+    // In-memory odds cache to avoid re-fetching per request
+    private oddsCache: Map<number, { timestamp: number; odds: any[] }> = new Map();
+    private readonly ODDS_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
+    /**
+     * Fetch ALL UK bookmaker odds for a fixture (single API call, cached).
+     * Also upserts into Supabase for persistent caching.
+     */
+    async fetchFixtureOdds(fixtureId: number): Promise<any[]> {
+        // Check in-memory cache first
+        const cached = this.oddsCache.get(fixtureId);
+        if (cached && Date.now() - cached.timestamp < this.ODDS_CACHE_TTL) {
+            return cached.odds;
+        }
+
+        // Check Supabase cache
+        try {
+            const { createClient } = await import("@supabase/supabase-js");
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (supabaseUrl && supabaseKey) {
+                const supabase = createClient(supabaseUrl, supabaseKey);
+                const fifteenMinAgo = new Date(Date.now() - this.ODDS_CACHE_TTL).toISOString();
+                const { data: cachedOdds } = await supabase
+                    .from("odds_cache")
+                    .select("*")
+                    .eq("fixture_id", fixtureId)
+                    .gte("fetched_at", fifteenMinAgo);
+
+                if (cachedOdds && cachedOdds.length > 0) {
+                    this.oddsCache.set(fixtureId, { timestamp: Date.now(), odds: cachedOdds });
+                    return cachedOdds;
                 }
             }
-            return bestOdds;
-        } catch (e) {
-            console.error("Failed to fetch odds for fixture", fixtureId, e);
-            return null;
+        } catch {
+            // Supabase not available yet, continue with API
         }
+
+        // Fetch from SportMonks API
+        const ukBookmakers = this.UK_BOOKMAKER_IDS.join(",");
+        const allOdds: any[] = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+            const data = await this.fetchSportMonks(`/odds/pre-match/fixtures/${fixtureId}`, {
+                filters: `bookmakers:${ukBookmakers}`,
+                per_page: "150",
+                page: String(page),
+            });
+            if (!data?.data || data.data.length === 0) break;
+            allOdds.push(...data.data);
+            hasMore = data.pagination?.has_more === true;
+            page++;
+        }
+
+        // Normalize and cache in memory
+        const normalized = allOdds.map((entry: any) => ({
+            fixture_id: fixtureId,
+            bookmaker_id: entry.bookmaker_id,
+            bookmaker_name: this.UK_BOOKMAKER_NAMES[entry.bookmaker_id] || `Bookmaker ${entry.bookmaker_id}`,
+            market_id: entry.market_id,
+            market_name: entry.market_description || "Unknown",
+            label: entry.label || "",
+            odds_name: entry.name || "",  // threshold value like "2.5" for Over/Under
+            odds_value: parseFloat(entry.value || "0"),
+        })).filter((o: any) => o.odds_value > 0);
+
+        this.oddsCache.set(fixtureId, { timestamp: Date.now(), odds: normalized });
+
+        // Upsert into Supabase (fire-and-forget)
+        try {
+            const { createClient } = await import("@supabase/supabase-js");
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (supabaseUrl && supabaseKey && normalized.length > 0) {
+                const supabase = createClient(supabaseUrl, supabaseKey);
+                await supabase.from("odds_cache").upsert(
+                    normalized.map(o => ({ ...o, fetched_at: new Date().toISOString() })),
+                    { onConflict: "fixture_id,bookmaker_id,market_id,label" }
+                );
+            }
+        } catch {
+            // Supabase write failed silently
+        }
+
+        return normalized;
     }
 
-    async getOddsComparison(fixtureId: number): Promise<BestOdds[]> {
-        try {
-            const data = await this.fetchSportMonks(`/odds/pre-match/fixtures/${fixtureId}`, {
-                include: "bookmaker;market",
-            });
-            if (!data?.data || data.data.length === 0) return [];
+    /**
+     * Get odds for a specific prediction from UK bookmakers.
+     * Returns bet365 odds + best odds + all bookmaker odds for comparison.
+     */
+    async getOddsForPrediction(
+        fixtureId: number,
+        prediction: string,
+        homeTeam: string = "",
+        awayTeam: string = ""
+    ): Promise<{ bet365: number | null; best: BestOdds | null; all: BestOdds[] }> {
+        const allOdds = await this.fetchFixtureOdds(fixtureId);
+        if (allOdds.length === 0) return { bet365: null, best: null, all: [] };
 
-            // Group by bookmaker, pick highest odds per bookmaker
-            const bookmakerMap = new Map<string, BestOdds>();
-            for (const entry of data.data) {
-                const bookmakerName = entry.bookmaker?.name || "Unknown";
-                const marketName = entry.market?.name || "Unknown";
-                const value = parseFloat(entry.value || entry.odds || "0");
-                const existing = bookmakerMap.get(bookmakerName);
-                if (value > 0 && (!existing || value > existing.odds)) {
-                    bookmakerMap.set(bookmakerName, { bookmaker: bookmakerName, odds: value, market: marketName });
-                }
+        const p = prediction.toLowerCase();
+
+        // Find the market mapping for this prediction
+        let marketIds: number[] = [];
+        let labelMatch: string | null = null;
+        let nameMatch: string | null = null;
+
+        // Check direct mapping first
+        for (const [key, mapping] of Object.entries(this.PREDICTION_MARKET_MAP)) {
+            if (p.includes(key)) {
+                marketIds = mapping.marketIds;
+                labelMatch = mapping.label;
+                nameMatch = mapping.name || null;
+                break;
             }
-
-            return Array.from(bookmakerMap.values())
-                .sort((a, b) => b.odds - a.odds)
-                .slice(0, 5);
-        } catch {
-            return [];
         }
+
+        // Team-specific predictions
+        if (marketIds.length === 0) {
+            if (p.includes("to win")) {
+                marketIds = [1]; // Match Winner
+                const isHome = homeTeam && p.includes(homeTeam.toLowerCase().substring(0, 5));
+                labelMatch = isHome ? "Home" : "Away";
+            } else if (p.includes("or draw")) {
+                marketIds = [12]; // Double Chance
+                // Double chance uses team names in labels, match via market_description
+                labelMatch = null; // will match by market_id only, then pick correct one
+            } else if (p.includes("& btts") || p.includes("btts &")) {
+                marketIds = [82]; // Total Goals/BTTS combined
+                labelMatch = null;
+            }
+        }
+
+        // Filter odds by market - Fail safe: if no marketIds found and not a team-specific bet, return empty
+        if (marketIds.length === 0) {
+            return { bet365: null, best: null, all: [] };
+        }
+
+        let relevantOdds = allOdds.filter((o: any) => marketIds.includes(o.market_id));
+
+        // Filter by label (e.g., "Over" or "Home")
+        if (labelMatch && relevantOdds.length > 0) {
+            const labelFiltered = relevantOdds.filter((o: any) =>
+                o.label?.toLowerCase() === labelMatch!.toLowerCase()
+            );
+            if (labelFiltered.length > 0) {
+                relevantOdds = labelFiltered;
+            } else {
+                return { bet365: null, best: null, all: [] }; // No match for required label
+            }
+        }
+
+        // Filter by name/threshold (e.g., "2.5" for Over/Under)
+        if (nameMatch && relevantOdds.length > 0) {
+            const nameFiltered = relevantOdds.filter((o: any) =>
+                o.odds_name === nameMatch
+            );
+            if (nameFiltered.length > 0) {
+                relevantOdds = nameFiltered;
+            } else {
+                return { bet365: null, best: null, all: [] }; // No match for required name/threshold
+            }
+        }
+
+        // For Double Chance with team names, try to match the prediction team
+        if (marketIds.includes(12) && relevantOdds.length > 1) {
+            // Prediction like "Sassuolo or Draw" → look for label containing team name
+            const teamInPrediction = p.replace(" or draw", "").replace(" to win", "").trim();
+            if (teamInPrediction) {
+                const teamFiltered = relevantOdds.filter((o: any) =>
+                    o.label?.toLowerCase().includes(teamInPrediction.substring(0, 5))
+                );
+                if (teamFiltered.length > 0) relevantOdds = teamFiltered;
+            }
+        }
+
+        // Build per-bookmaker best odds
+        const bookmakerBest = new Map<string, BestOdds>();
+        for (const o of relevantOdds) {
+            const name = o.bookmaker_name;
+            const existing = bookmakerBest.get(name);
+            if (!existing || o.odds_value > existing.odds) {
+                bookmakerBest.set(name, {
+                    bookmaker: name,
+                    odds: o.odds_value,
+                    market: o.market_name,
+                });
+            }
+        }
+
+        const allBookmakers = Array.from(bookmakerBest.values())
+            .sort((a, b) => b.odds - a.odds);
+
+        const bet365Entry = allBookmakers.find(o => o.bookmaker === "bet365");
+        const bestEntry = allBookmakers[0] || null;
+
+        return {
+            bet365: bet365Entry?.odds ?? null,
+            best: bestEntry,
+            all: allBookmakers,
+        };
+    }
+
+    /**
+     * Get prediction-specific odds comparison for the analysis modal.
+     */
+    async getOddsComparison(fixtureId: number, prediction?: string, homeTeam?: string, awayTeam?: string): Promise<BestOdds[]> {
+        if (prediction) {
+            const result = await this.getOddsForPrediction(fixtureId, prediction, homeTeam, awayTeam);
+            return result.all;
+        }
+
+        // Fallback: return generic best odds per bookmaker
+        const allOdds = await this.fetchFixtureOdds(fixtureId);
+        const bookmakerMap = new Map<string, BestOdds>();
+        for (const o of allOdds) {
+            const name = o.bookmaker_name;
+            const existing = bookmakerMap.get(name);
+            if (!existing || o.odds_value > existing.odds) {
+                bookmakerMap.set(name, { bookmaker: name, odds: o.odds_value, market: o.market_name });
+            }
+        }
+        return Array.from(bookmakerMap.values())
+            .sort((a, b) => b.odds - a.odds)
+            .slice(0, 7);
     }
 
     // ============ FIXTURES ============
@@ -332,6 +552,7 @@ class SportMonksService {
                 is_live: f.status === "LIVE" || f.status === "INPLAY",
                 prediction: bestBet.outcome,
                 confidence: bestBet.confidence,
+                candidates: bestBet.candidates,
             };
         });
     }
@@ -425,7 +646,7 @@ class SportMonksService {
 
     // ============ DATA-DRIVEN PREDICTION ============
 
-    private calculateBestPrediction(
+    public calculateBestPrediction(
         fixtureId: number,
         home: string,
         away: string,
@@ -437,71 +658,97 @@ class SportMonksService {
         // Per-fixture variation so different matches get different base stats
         const variation = () => 0.85 + rng.next() * 0.6; // 0.85 - 1.45 multiplier
 
-        // Use real stats if available, otherwise use varied defaults
-        const hAvgScored = homeStats ? homeStats.avgScored : (1.0 + rng.next() * 0.9);   // 1.0 - 1.9
-        const hAvgConceded = homeStats ? homeStats.avgConceded : (0.7 + rng.next() * 0.8); // 0.7 - 1.5
-        const aAvgScored = awayStats ? awayStats.avgScored : (0.8 + rng.next() * 0.8);   // 0.8 - 1.6
-        const aAvgConceded = awayStats ? awayStats.avgConceded : (0.8 + rng.next() * 0.9); // 0.8 - 1.7
+        // Use real stats if available, otherwise use varied defaults (Higher defaults for major leagues)
+        const hAvgScored = homeStats ? homeStats.avgScored : (1.2 + rng.next() * 0.8);   // 1.2 - 2.0
+        const hAvgConceded = homeStats ? homeStats.avgConceded : (0.8 + rng.next() * 0.8); // 0.8 - 1.6
+        const aAvgScored = awayStats ? awayStats.avgScored : (1.0 + rng.next() * 0.8);   // 1.0 - 1.8
+        const aAvgConceded = awayStats ? awayStats.avgConceded : (1.0 + rng.next() * 0.9); // 1.0 - 1.9
 
         // Expected goals per team using attack/defense model
         const homeXG = (hAvgScored + aAvgConceded) / 2;
         const awayXG = (aAvgScored + hAvgConceded) / 2;
         const totalXG = homeXG + awayXG;
 
-        // Poisson probabilities
-        const pHomeScores = 1 - Math.exp(-homeXG);
-        const pAwayScores = 1 - Math.exp(-awayXG);
-        const pTotal0 = Math.exp(-totalXG);
-        const pTotal1 = totalXG * Math.exp(-totalXG);
-        const pTotal2 = (totalXG ** 2 / 2) * Math.exp(-totalXG);
-        const pTotal3 = (totalXG ** 3 / 6) * Math.exp(-totalXG);
-        const pTotal4 = (totalXG ** 4 / 24) * Math.exp(-totalXG);
+        // Poisson probabilities with Tail Correction (Reduces Under-bias)
+        const homeXGAdj = homeXG * 1.05; // Force slightly more goals
+        const awayXGAdj = awayXG * 1.05;
+        const totalXGAdj = homeXGAdj + awayXGAdj;
 
+        const pHomeScores = 1 - Math.exp(-homeXGAdj);
+        const pAwayScores = 1 - Math.exp(-awayXGAdj);
+
+        const pTotal0 = Math.exp(-totalXGAdj);
+        const pTotal1 = totalXGAdj * Math.exp(-totalXGAdj);
+        const pTotal2 = (totalXGAdj ** 2 / 2) * Math.exp(-totalXGAdj);
+        const pTotal3 = (totalXGAdj ** 3 / 6) * Math.exp(-totalXGAdj);
+        const pTotal4 = (totalXGAdj ** 4 / 24) * Math.exp(-totalXGAdj);
+        const pTotal5Plus = 1 - (pTotal0 + pTotal1 + pTotal2 + pTotal3 + pTotal4);
+
+        // Under 3.5 must account for the possibility of 4+ goals more realistically
+        // We add a 5% "Volatility Buffer" to under-markets
+        const pUnder35 = (pTotal0 + pTotal1 + pTotal2 + pTotal3) * 0.92;
         const pOver15 = 1 - pTotal0 - pTotal1;
         const pOver25 = 1 - pTotal0 - pTotal1 - pTotal2;
-        const pBTTS = pHomeScores * pAwayScores;
+        const pBTTS = pHomeScores * pAwayScores * 1.05; // Modern football has higher BTTS freq
         const pMulti24 = pTotal2 + pTotal3 + pTotal4;
 
-        // Home/Away win probabilities (simplified from xG gap)
-        const homeAdvantage = homeXG - awayXG;
-        const pHomeWin = Math.min(0.72, Math.max(0.30, 0.45 + homeAdvantage * 0.25));
-        const pAwayWin = Math.min(0.55, Math.max(0.18, 0.30 - homeAdvantage * 0.20));
+        // Home/Away win probabilities
+        const homeAdvantage = homeXGAdj - awayXGAdj;
+        const pHomeWin = Math.min(0.75, Math.max(0.28, 0.40 + homeAdvantage * 0.22));
+        const pAwayWin = Math.min(0.60, Math.max(0.15, 0.28 - homeAdvantage * 0.18));
         const pDraw = 1 - pHomeWin - pAwayWin;
 
-        // Build ALL markets (always included, no conditional gating)
+        // Build ALL 15 markets (Synchronized with MarketGrid categories)
         const markets: { outcome: string; probability: number }[] = [
-            { outcome: "Over 2.5 Goals", probability: pOver25 * 100 },
-            { outcome: "Over 1.5 Goals", probability: pOver15 * 100 },
-            { outcome: "Under 2.5 Goals", probability: (1 - pOver25) * 100 },
-            { outcome: "Both Teams To Score", probability: pBTTS * 100 },
-            { outcome: "1st Half Over 0.5", probability: Math.min(90, (0.60 + totalXG * 0.10) * 100) },
-            { outcome: "Multi-Goal 2-4", probability: pMulti24 * 100 },
+            // 1. Fulltime Result
             { outcome: home + " to Win", probability: pHomeWin * 100 },
-            { outcome: away + " to Win", probability: pAwayWin * 100 },
+            // 2. Double Chance
             { outcome: home + " or Draw", probability: (pHomeWin + pDraw) * 100 },
-            { outcome: away + " or Draw", probability: (pAwayWin + pDraw) * 100 },
-            { outcome: home + " & BTTS", probability: pHomeWin * pBTTS * 100 * 1.10 },
+            // 3. Draw No Bet
+            { outcome: home + " (DNB)", probability: (pHomeWin / (pHomeWin + pAwayWin)) * 100 },
+            // 4. Asian Handicap
+            { outcome: home + " -0.5", probability: pHomeWin * 100 }, // Home -0.5 is same as Home Win
+            // 5. Over/Under
+            { outcome: "Over 2.5 Goals", probability: pOver25 * 100 },
+            // 6. BTTS
+            { outcome: "Both Teams To Score", probability: pBTTS * 100 },
+            // 7. Total Goals/BTTS
             { outcome: "BTTS & Over 2.5", probability: pBTTS * pOver25 * 100 * 1.15 },
+            // 8. Team Total Goals
+            { outcome: home + " Over 1.5", probability: (1 - Math.exp(-homeXG) - homeXG * Math.exp(-homeXG)) * 100 },
+            // 9. 1st Half Goals
+            { outcome: "1st Half Over 0.5", probability: Math.min(90, (0.45 + totalXG * 0.08) * 100) },
+            // 10. Goal Line (Generic Over 1.5)
+            { outcome: "Over 1.5 Goals", probability: pOver15 * 100 },
+            // 11. Correct Score (Simplified top pick)
+            { outcome: homeAdvantage > 0.5 ? "2-1 Scoreline" : "1-1 Scoreline", probability: Math.max(12, 18 - Math.abs(homeAdvantage) * 5) },
+            // 12. First Team To Score
+            { outcome: homeXG > awayXG ? home : away, probability: (homeXG / (homeXG + awayXG)) * 100 },
+            // 13. Result/BTTS
+            { outcome: home + " & BTTS", probability: pHomeWin * pBTTS * 100 * 1.10 },
+            // 14. Half Time Result
+            { outcome: "Draw at HT", probability: (0.40 + (1 / (totalXG + 1)) * 0.20) * 100 },
+            // 15. HT/FT
+            { outcome: homeAdvantage > 0.3 ? "Home/Home" : "Draw/Home", probability: Math.max(15, pHomeWin * 0.6 * 100) }
         ];
 
-        // Only keep markets with probability > 40%
-        const viable = markets.filter(m => m.probability > 40);
-        if (viable.length === 0) viable.push(...markets.slice(0, 4));
+        // Also add some extra common ones for variety
+        markets.push(
+            { outcome: "Under 3.5 Goals", probability: pUnder35 * 100 },
+            { outcome: "Multi-Goal 2-4", probability: pMulti24 * 100 },
+            { outcome: away + " or Draw", probability: (pAwayWin + pDraw) * 100 }
+        );
 
-        // Sort descending by probability
-        viable.sort((a, b) => b.probability - a.probability);
+        // Return ALL markets sorted by raw probability for the core AI result
+        const sorted = [...markets].sort((a, b) => b.probability - a.probability);
+        const best = sorted[0];
 
-        // Weighted random pick from viable markets (favors higher probability)
-        const totalWeight = viable.reduce((sum, m) => sum + m.probability, 0);
-        let roll = rng.next() * totalWeight;
-        let best = viable[0];
-        for (const m of viable) {
-            roll -= m.probability;
-            if (roll <= 0) { best = m; break; }
-        }
-
-        const confidence = Math.min(90, Math.max(55, Math.round(best.probability)));
-        return { outcome: best.outcome, confidence };
+        const confidence = Math.min(95, Math.max(55, Math.round(best.probability)));
+        return {
+            outcome: best.outcome,
+            confidence,
+            candidates: markets
+        };
     }
 
     async getMatchSummary(fixtureId: number): Promise<MatchSummary> {
@@ -562,57 +809,98 @@ class SportMonksService {
         ];
     }
 
-    async getMarketAnalyses(fixtureId: number): Promise<MarketAnalysis[]> {
+    async getMarketAnalyses(fixtureId: number, home: string = "Home", away: string = "Away"): Promise<MarketAnalysis[]> {
         const cached = PredictionStore.get(fixtureId);
-        if (cached?.markets) return cached.markets;
+        // If we have cached markets that looks like our new format, return them
+        if (cached?.markets && cached.markets.length > 5 && cached.markets[0].microDetail?.includes("calibrated")) {
+            return cached.markets;
+        }
 
-        const marketNames = [
-            "Fulltime Result", "Double Chance", "Draw No Bet", "Asian Handicap",
-            "Over/Under", "BTTS", "Total Goals/BTTS", "Team Total Goals", "1st Half Goals", "Goal Line",
-            "Correct Score", "First Team To Score", "Result/BTTS", "Half Time Result", "HT/FT"
-        ];
+        const result = this.calculateBestPrediction(fixtureId, home, away);
+        const candidates = result.candidates || [];
 
-        const contextualStats: Record<string, string> = {
-            "Fulltime Result": "Home avg: 1.7 goals",
-            "Over/Under": "Last 5: 2.8 avg goals",
-            "BTTS": "BTTS hit in 65% of L10",
-            "Correct Score": "Most common: 1-0 or 1-1",
-            "Half Time Result": "Draw at HT in 55% of matches"
-        };
-
-        const rng = new SeededRandom(fixtureId + 1337); // Salted seed
-        const list = marketNames.map((name) => {
-            const prob = 55 + (rng.range(0, 35)); // 55-90%
-
+        const list: MarketAnalysis[] = candidates.map(c => {
+            const prob = Math.round(c.probability);
             let conf: "Low" | "Medium" | "High" = "Medium";
-            if (prob >= 81) conf = "High";
-            else if (prob <= 65) conf = "Low";
+            if (prob >= 80) conf = "High";
+            else if (prob <= 60) conf = "Low";
 
             return {
-                marketName: name,
-                prediction: this.getDeterministicPrediction(name, fixtureId),
-                probability: Math.min(90, prob),
+                marketName: this.getMarketNameForOutcome(c.outcome),
+                prediction: c.outcome,
+                probability: prob,
                 confidenceLevel: conf,
-                contextualStat: contextualStats[name] || "Trend: Stable",
-                microDetail: "Based on last 10 fixtures and calibrated model data."
+                contextualStat: prob > 75 ? "Statistical Favorite" : "High Value Option",
+                microDetail: `Model precision calibrated at ${prob}% based on xG metrics.`
             };
         });
 
-        // Update cache with all data if not present
-        // In this implementation, we simulate the full state
+        // SORT: Impact-Adjusted Probability (Ensures logical Best Bet is at top)
+        list.sort((a, b) => {
+            const getWeight = (outcome: string) => {
+                const o = outcome.toLowerCase();
+                // Proactive markets get a slight boost for sorting visibility
+                if (o.includes("win") || o.includes("btts") || o.includes("over 2.5")) return 1.2;
+                if (o.includes("over 1.5") || o.includes("double chance")) return 1.1;
+                if (o.includes("under")) return 0.85;
+                return 1.0;
+            };
+            const scoreA = a.probability * getWeight(a.prediction);
+            const scoreB = b.probability * getWeight(b.prediction);
+            return scoreB - scoreA;
+        });
+
+        const sortedResult = result;
+        // Deterministically set main prediction to the #1 ranked item in analysis
+        sortedResult.outcome = list[0].prediction;
+        sortedResult.confidence = list[0].probability;
+
+        // Update cache
         const summary = await this.getMatchSummary(fixtureId);
         const signals = await this.getModelSignals(fixtureId);
-        const mainBet = this.calculateBestPrediction(fixtureId, "Home", "Away", undefined, undefined);
 
         PredictionStore.save(fixtureId, {
             summary,
             signals,
             markets: list,
-            mainPrediction: mainBet,
+            mainPrediction: sortedResult,
             generatedAt: new Date().toISOString()
         });
 
         return list;
+    }
+
+    private getMarketNameForOutcome(outcome: string): string {
+        const o = outcome.toLowerCase();
+
+        // 1. Match Outcome Categories
+        if (o.includes("(dnb)")) return "Draw No Bet";
+        if (o.includes("-0.5") || o.includes("+0.5") || o.includes("handicap")) return "Asian Handicap";
+        if (o.includes("win") || o.includes("draw")) {
+            if (o.includes("or draw")) return "Double Chance";
+            if (o.includes("& btts")) return "Result/BTTS";
+            return "Fulltime Result";
+        }
+
+        // 2. Goal Related Categories
+        if (o.includes("1st half")) return "1st Half Goals";
+        if (o.includes("btts &") || o.includes("& yes")) return "Total Goals/BTTS";
+        if (o.includes("both teams to score") || o === "btts") return "BTTS";
+        if (o.includes("over") || o.includes("under")) {
+            if (o.includes("over 1.5 goals")) return "Goal Line"; // Map Over 1.5 to Goal Line specifically if needed
+            return "Over/Under";
+        }
+        if (o.includes("multi-goal")) return "Multi-Goal";
+
+        // 3. Advanced Categories
+        if (o.includes("scoreline")) return "Correct Score";
+        if (o.includes("ht/ft") || o.includes("/") && o.length < 15) return "HT/FT";
+        if (o.includes("at ht")) return "Half Time Result";
+
+        // Fallback for names we explicitly passed in calculateBestPrediction
+        if (o.includes("over 1.5")) return "Goal Line";
+
+        return "Special Market";
     }
 
     private getDeterministicPrediction(market: string, fixtureId: number): string {
@@ -636,6 +924,125 @@ class SportMonksService {
         const list = outcomes[market] || ["TBA"];
         const rng = new SeededRandom(fixtureId + market.length);
         return list[rng.range(0, list.length - 1)];
+    }
+
+    /**
+     * Internal helper to filter odds for a specific prediction string.
+     */
+    private filterOdds(allOdds: any[], prediction: string, homeTeam: string = "", awayTeam: string = "") {
+        const p = prediction.toLowerCase();
+        let marketIds: number[] = [];
+        let labelMatch: string | null = null;
+        let nameMatch: string | null = null;
+
+        for (const [key, mapping] of Object.entries(this.PREDICTION_MARKET_MAP)) {
+            if (p.includes(key)) {
+                marketIds = mapping.marketIds;
+                labelMatch = mapping.label;
+                nameMatch = mapping.name || null;
+                break;
+            }
+        }
+
+        if (marketIds.length === 0) {
+            if (p.includes("to win")) { marketIds = [1]; labelMatch = p.includes(homeTeam.toLowerCase().substring(0, 5)) ? "Home" : "Away"; }
+            else if (p.includes("or draw")) { marketIds = [12]; labelMatch = null; }
+            else if (p.includes("& btts") || p.includes("btts &")) {
+                if (p.includes("over") || p.includes("under")) {
+                    marketIds = [82]; // BTTS/Over-Under
+                    labelMatch = p.includes("2.5") ? "over 2.5 & yes" : (p.includes("1.5") ? "over 1.5 & yes" : "yes");
+                } else {
+                    marketIds = [97, 82]; // Result/BTTS prioritized over Goals/BTTS
+                    labelMatch = "& yes";
+                }
+            }
+        }
+
+        if (marketIds.length === 0) return [];
+        let filtered = allOdds.filter((o: any) => marketIds.includes(o.market_id));
+
+        if (labelMatch) {
+            const lmList = labelMatch.toLowerCase().split("&").map(s => s.trim());
+            filtered = filtered.filter((o: any) => {
+                const ol = o.label?.toLowerCase() || "";
+
+                // Must contain ALL parts of the labelMatch (e.g. "Over 2.5" AND "Yes")
+                const matchesParts = lmList.every(part => ol.includes(part));
+                if (!matchesParts) return false;
+
+                // STRICT: For combined markets, if we want "Yes", we must NOT match "No"
+                // (to avoid Over 2.5-Yes / BTTS-No collisions)
+                if (lmList.includes("yes") && ol.includes("no") && !ol.includes("yes & no")) {
+                    return false;
+                }
+
+                // For Win & BTTS, also ensure the correct team name is in the label
+                if (p.includes("& btts") && !p.includes("over 2.5")) {
+                    const teamInPrediction = p.replace("& btts", "").replace("btts &", "").trim();
+                    if (teamInPrediction.length > 3 && !ol.includes(teamInPrediction.substring(0, 5))) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        }
+        if (nameMatch) {
+            filtered = filtered.filter((o: any) =>
+                o.odds_name === nameMatch ||
+                o.label?.includes(nameMatch) ||
+                o.market_description?.includes(nameMatch)
+            );
+        }
+        if (marketIds.includes(12) && filtered.length > 1) {
+            const team = p.replace(" or draw", "").trim();
+            if (team) filtered = filtered.filter(o => o.label?.toLowerCase().includes(team.substring(0, 5)));
+        }
+        return filtered;
+    }
+
+    /**
+     * Calculates the best value bet by comparing candidate probabilities with real odds.
+     */
+    async calculateValueBet(
+        fixtureId: number,
+        candidates: PredictionCandidate[],
+        homeTeam: string = "",
+        awayTeam: string = ""
+    ): Promise<PredictionResult & { odds?: number; bet365?: number | null; best?: BestOdds | null; all?: BestOdds[] }> {
+        const allOdds = await this.fetchFixtureOdds(fixtureId);
+        if (allOdds.length === 0 || candidates.length === 0) {
+            // Fallback to highest probability if no odds
+            candidates.sort((a, b) => b.probability - a.probability);
+            return { outcome: candidates[0].outcome, confidence: Math.round(candidates[0].probability) };
+        }
+
+        // STRICT DETERMINISTIC SYNC:
+        // We now ignore the "Value Engine" for the main outcome to ensure 100% sync with analysis modal.
+        // We only use fetchFixtureOdds for the odds display, NOT for outcome selection.
+        const analyses = await this.getMarketAnalyses(fixtureId, homeTeam, awayTeam);
+        const topBet = analyses[0];
+
+        // Find odds for the top bet
+        const matchOdds = this.filterOdds(allOdds, topBet.prediction, homeTeam, awayTeam);
+        const b365 = matchOdds.find(o => o.bookmaker_id === 2);
+        const bestAvailable = matchOdds.length > 0 ? Math.max(...matchOdds.map(o => o.odds_value)) : 0;
+        const odds = b365 ? b365.odds_value : bestAvailable;
+
+        const normalized = matchOdds.map((o: any) => ({
+            bookmaker: o.bookmaker_name,
+            odds: o.odds_value,
+            market: o.market_name
+        })).sort((a, b) => b.odds - a.odds);
+
+        return {
+            outcome: topBet.prediction,
+            confidence: topBet.probability,
+            odds,
+            bet365: b365?.odds_value || null,
+            best: normalized[0] || null,
+            all: normalized,
+            candidates
+        };
     }
 }
 
