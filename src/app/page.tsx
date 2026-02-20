@@ -34,8 +34,8 @@ export default async function Home() {
             <section className="container mx-auto px-4 py-16">
                 <div className="flex items-center justify-between mb-12">
                     <div>
-                        <h2 className="text-3xl font-bold text-white mb-2">Featured Predictions</h2>
-                        <p className="text-white/40">Hand-picked high confidence tips for tonight</p>
+                        <h2 className="text-3xl font-bold text-white mb-2">Dashboard Overview</h2>
+                        <p className="text-white/40">Real-time AI insights for the most impactful matchups</p>
                     </div>
                     <Link
                         href="/games/today"
