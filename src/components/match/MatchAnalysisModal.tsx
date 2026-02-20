@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-mo
 import { X, Loader2, Check } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { sportmonksService, MarketAnalysis, MatchSummary, ModelSignal } from "@/lib/services/prediction";
+import { sportmonksService, MarketAnalysis, MatchSummary, ModelSignal, BestOdds } from "@/lib/services/prediction";
 import { MarketGrid } from "./MarketGrid";
 import { cn } from "@/lib/utils";
 import { useWatchlist } from "@/lib/hooks/useWatchlist";
@@ -45,6 +45,7 @@ export function MatchAnalysisModal({
     const [showFooter, setShowFooter] = useState(false);
     const [showBanner, setShowBanner] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
+    const [oddsComparison, setOddsComparison] = useState<BestOdds[]>([]);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const scrollY = useMotionValue(0);
@@ -66,14 +67,16 @@ export function MatchAnalysisModal({
         if (isOpen && markets.length === 0) {
             const fetchData = async () => {
                 setIsLoading(true);
-                const [marketData, summaryData, signalsData] = await Promise.all([
+                const [marketData, summaryData, signalsData, oddsData] = await Promise.all([
                     sportmonksService.getMarketAnalyses(fixtureId),
                     sportmonksService.getMatchSummary(fixtureId),
-                    sportmonksService.getModelSignals(fixtureId)
+                    sportmonksService.getModelSignals(fixtureId),
+                    sportmonksService.getOddsComparison(fixtureId),
                 ]);
                 setMarkets(marketData);
                 setMatchSummary(summaryData);
                 setModelSignals(signalsData);
+                setOddsComparison(oddsData);
                 setIsLoading(false);
             };
             fetchData();
@@ -347,6 +350,40 @@ export function MatchAnalysisModal({
                                                     ))}
                                                 </div>
                                             </div>
+
+                                            {/* Best Odds Comparison */}
+                                            {oddsComparison.length > 0 && (
+                                                <div className="space-y-8">
+                                                    <div className="flex items-center gap-4">
+                                                        <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">Best Odds</h3>
+                                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                                                    </div>
+                                                    <div className="bg-white/[0.03] border border-white/5 rounded-3xl overflow-hidden">
+                                                        <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-6 py-3 border-b border-white/5">
+                                                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Bookmaker</span>
+                                                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] text-right">Market</span>
+                                                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] text-right">Odds</span>
+                                                        </div>
+                                                        {oddsComparison.map((odd, idx) => (
+                                                            <div key={idx} className={cn(
+                                                                "grid grid-cols-[1fr_auto_auto] gap-4 px-6 py-4 items-center transition-colors hover:bg-white/[0.03]",
+                                                                idx === 0 ? "bg-emerald-500/5" : "",
+                                                                idx < oddsComparison.length - 1 ? "border-b border-white/5" : ""
+                                                            )}>
+                                                                <div className="flex items-center gap-3">
+                                                                    {idx === 0 && <span className="text-[9px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">BEST</span>}
+                                                                    <span className={cn("text-xs font-bold", idx === 0 ? "text-white" : "text-white/60")}>{odd.bookmaker}</span>
+                                                                </div>
+                                                                <span className="text-[10px] font-medium text-white/40 text-right">{odd.market}</span>
+                                                                <span className={cn(
+                                                                    "text-sm font-black text-right tabular-nums",
+                                                                    idx === 0 ? "text-emerald-400" : "text-white/60"
+                                                                )}>{odd.odds.toFixed(2)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
 
                                             {/* AI Disclaimer */}
                                             <div className="p-8 rounded-3xl bg-purple-500/5 border border-purple-500/10 text-center mb-12">

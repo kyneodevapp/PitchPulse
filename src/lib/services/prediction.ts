@@ -1,3 +1,9 @@
+export interface BestOdds {
+    bookmaker: string;
+    odds: number;
+    market: string;
+}
+
 export interface Match {
     id: number;
     home_team: string;
@@ -11,6 +17,7 @@ export interface Match {
     is_live: boolean;
     prediction?: string;
     confidence?: number;
+    best_odds?: BestOdds;
 }
 
 export interface PastMatch extends Match {
@@ -87,13 +94,26 @@ class PredictionStore {
     }
 }
 
+interface TeamStats {
+    goalsFor: number;
+    goalsAgainst: number;
+    gamesPlayed: number;
+    avgScored: number;
+    avgConceded: number;
+}
+
 class SportMonksService {
     private sportmonksApiKey: string | undefined;
     private footballDataApiKey: string | undefined;
     private sportmonksBaseUrl = "https://api.sportmonks.com/v3/football";
+    private oddsBaseUrl = "https://api.sportmonks.com/v3/football";
     private footballDataBaseUrl = "https://api.football-data.org/v4";
 
     private LEAGUE_IDS = [2, 5, 8, 9, 564, 567, 82, 384, 387];
+
+    // In-memory standings cache: seasonId -> { timestamp, data }
+    private standingsCache: Map<number, { timestamp: number; teams: Map<number, TeamStats> }> = new Map();
+    private readonly STANDINGS_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
     constructor() {
         this.sportmonksApiKey = process.env.SPORTMONKS_API_KEY;
@@ -158,6 +178,116 @@ class SportMonksService {
         return allData;
     }
 
+    // ============ STANDINGS (Team Stats) ============
+
+    private async getTeamStats(seasonId: number): Promise<Map<number, TeamStats>> {
+        // Check cache
+        const cached = this.standingsCache.get(seasonId);
+        if (cached && Date.now() - cached.timestamp < this.STANDINGS_CACHE_TTL) {
+            return cached.teams;
+        }
+
+        const teamMap = new Map<number, TeamStats>();
+
+        // SportMonks standing type_ids:
+        // 129 = Overall Matches Played
+        // 133 = Overall Goals Scored
+        // 134 = Overall Goals Conceded
+        const TYPE_MATCHES_PLAYED = 129;
+        const TYPE_GOALS_SCORED = 133;
+        const TYPE_GOALS_CONCEDED = 134;
+
+        try {
+            const data = await this.fetchSportMonks(`/standings/seasons/${seasonId}`, {
+                include: "details",
+            });
+
+            if (data?.data && Array.isArray(data.data)) {
+                for (const row of data.data) {
+                    const teamId = row.participant_id;
+                    if (!teamId) continue;
+
+                    // Extract stats from details[] by type_id
+                    const details: any[] = row.details || [];
+                    let gf = 0, ga = 0, gp = 1;
+                    for (const d of details) {
+                        if (d.type_id === TYPE_GOALS_SCORED) gf = Number(d.value) || 0;
+                        if (d.type_id === TYPE_GOALS_CONCEDED) ga = Number(d.value) || 0;
+                        if (d.type_id === TYPE_MATCHES_PLAYED) gp = Number(d.value) || 1;
+                    }
+
+                    teamMap.set(teamId, {
+                        goalsFor: gf,
+                        goalsAgainst: ga,
+                        gamesPlayed: gp,
+                        avgScored: gp > 0 ? gf / gp : 1.2,
+                        avgConceded: gp > 0 ? ga / gp : 1.2,
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Failed to fetch standings for season", seasonId, e);
+        }
+
+        this.standingsCache.set(seasonId, { timestamp: Date.now(), teams: teamMap });
+        return teamMap;
+    }
+
+    // ============ ODDS ============
+
+    async getOddsForFixture(fixtureId: number): Promise<BestOdds | null> {
+        try {
+            const data = await this.fetchSportMonks(`/odds/pre-match/fixtures/${fixtureId}`, {
+                include: "bookmaker;market",
+            });
+            if (!data?.data || data.data.length === 0) return null;
+
+            // Find highest odds across all bookmakers for any market
+            let bestOdds: BestOdds | null = null;
+            for (const entry of data.data) {
+                const bookmakerName = entry.bookmaker?.name || "Unknown";
+                const marketName = entry.market?.name || "Unknown";
+                const value = parseFloat(entry.value || entry.odds || "0");
+                if (value > 0 && (!bestOdds || value > bestOdds.odds)) {
+                    bestOdds = { bookmaker: bookmakerName, odds: value, market: marketName };
+                }
+            }
+            return bestOdds;
+        } catch (e) {
+            console.error("Failed to fetch odds for fixture", fixtureId, e);
+            return null;
+        }
+    }
+
+    async getOddsComparison(fixtureId: number): Promise<BestOdds[]> {
+        try {
+            const data = await this.fetchSportMonks(`/odds/pre-match/fixtures/${fixtureId}`, {
+                include: "bookmaker;market",
+            });
+            if (!data?.data || data.data.length === 0) return [];
+
+            // Group by bookmaker, pick highest odds per bookmaker
+            const bookmakerMap = new Map<string, BestOdds>();
+            for (const entry of data.data) {
+                const bookmakerName = entry.bookmaker?.name || "Unknown";
+                const marketName = entry.market?.name || "Unknown";
+                const value = parseFloat(entry.value || entry.odds || "0");
+                const existing = bookmakerMap.get(bookmakerName);
+                if (value > 0 && (!existing || value > existing.odds)) {
+                    bookmakerMap.set(bookmakerName, { bookmaker: bookmakerName, odds: value, market: marketName });
+                }
+            }
+
+            return Array.from(bookmakerMap.values())
+                .sort((a, b) => b.odds - a.odds)
+                .slice(0, 5);
+        } catch {
+            return [];
+        }
+    }
+
+    // ============ FIXTURES ============
+
     async getFixtures(days: number = 10): Promise<Match[]> {
         const now = new Date();
         const startDate = now.toISOString().split('T')[0];
@@ -170,20 +300,31 @@ class SportMonksService {
 
         if (allFixtures.length === 0) return [];
 
-        return allFixtures.map((f: any) => {
-            const home = f.participants.find((p: any) => p.meta.location === "home")?.name || "Home Team";
-            const away = f.participants.find((p: any) => p.meta.location === "away")?.name || "Away Team";
+        // Collect unique season IDs and fetch standings
+        const seasonIds = [...new Set(allFixtures.map((f: any) => f.season_id).filter(Boolean))];
+        const allTeamStats = new Map<number, TeamStats>();
+        for (const sid of seasonIds) {
+            const stats = await this.getTeamStats(sid);
+            stats.forEach((v, k) => allTeamStats.set(k, v));
+        }
 
-            // Check persistence first
+        return allFixtures.map((f: any) => {
+            const homeP = f.participants.find((p: any) => p.meta.location === "home");
+            const awayP = f.participants.find((p: any) => p.meta.location === "away");
+            const home = homeP?.name || "Home Team";
+            const away = awayP?.name || "Away Team";
+            const homeStats = allTeamStats.get(homeP?.id);
+            const awayStats = allTeamStats.get(awayP?.id);
+
             const cached = PredictionStore.get(f.id);
-            const bestBet = cached?.mainPrediction || this.calculateBestPrediction(f.id, home, away);
+            const bestBet = cached?.mainPrediction || this.calculateBestPrediction(f.id, home, away, homeStats, awayStats);
 
             return {
                 id: f.id,
                 home_team: home,
                 away_team: away,
-                home_logo: f.participants.find((p: any) => p.meta.location === "home")?.image_path || "",
-                away_logo: f.participants.find((p: any) => p.meta.location === "away")?.image_path || "",
+                home_logo: homeP?.image_path || "",
+                away_logo: awayP?.image_path || "",
                 start_time: f.starting_at,
                 league_name: f.league?.name || "League",
                 league_id: f.league_id,
@@ -207,25 +348,36 @@ class SportMonksService {
 
         if (allFixtures.length === 0) return [];
 
-        return allFixtures
-            .filter((f: any) => f.state_id === 5) // FT = Full Time
-            .map((f: any) => {
-                const home = f.participants.find((p: any) => p.meta.location === "home")?.name || "Home Team";
-                const away = f.participants.find((p: any) => p.meta.location === "away")?.name || "Away Team";
+        // Collect unique season IDs and fetch standings
+        const seasonIds = [...new Set(allFixtures.map((f: any) => f.season_id).filter(Boolean))];
+        const allTeamStats = new Map<number, TeamStats>();
+        for (const sid of seasonIds) {
+            const stats = await this.getTeamStats(sid);
+            stats.forEach((v, k) => allTeamStats.set(k, v));
+        }
 
-                // Extract scores from the scores include
+        return allFixtures
+            .filter((f: any) => f.state_id === 5)
+            .map((f: any) => {
+                const homeP = f.participants.find((p: any) => p.meta.location === "home");
+                const awayP = f.participants.find((p: any) => p.meta.location === "away");
+                const home = homeP?.name || "Home Team";
+                const away = awayP?.name || "Away Team";
+                const homeStats = allTeamStats.get(homeP?.id);
+                const awayStats = allTeamStats.get(awayP?.id);
+
                 const homeScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "home")?.score?.goals ?? 0;
                 const awayScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "away")?.score?.goals ?? 0;
 
-                const bestBet = this.calculateBestPrediction(f.id, home, away);
+                const bestBet = this.calculateBestPrediction(f.id, home, away, homeStats, awayStats);
                 const hit = this.evaluatePrediction(bestBet.outcome, homeScore, awayScore, home, away);
 
                 return {
                     id: f.id,
                     home_team: home,
                     away_team: away,
-                    home_logo: f.participants.find((p: any) => p.meta.location === "home")?.image_path || "",
-                    away_logo: f.participants.find((p: any) => p.meta.location === "away")?.image_path || "",
+                    home_logo: homeP?.image_path || "",
+                    away_logo: awayP?.image_path || "",
                     start_time: f.starting_at,
                     league_name: f.league?.name || "League",
                     league_id: f.league_id,
@@ -240,6 +392,8 @@ class SportMonksService {
                 };
             });
     }
+
+    // ============ EVALUATION ============
 
     private evaluatePrediction(prediction: string, homeScore: number, awayScore: number, home: string, away: string): boolean {
         const totalGoals = homeScore + awayScore;
@@ -258,7 +412,7 @@ class SportMonksService {
         if (p.includes("double chance")) return awayWin || homeScore === awayScore;
         if (p.includes("multi-goal 2-4")) return totalGoals >= 2 && totalGoals <= 4;
 
-        // Simple checks AFTER
+        // Simple checks
         if (p.includes("1st half over 0.5")) return totalGoals > 0;
         if (p === "both teams to score" || p === "btts") return btts;
         if (p.includes("over 2.5")) return totalGoals > 2.5;
@@ -269,31 +423,84 @@ class SportMonksService {
         return false;
     }
 
-    private calculateBestPrediction(fixtureId: number, home: string, away: string) {
+    // ============ DATA-DRIVEN PREDICTION ============
+
+    private calculateBestPrediction(
+        fixtureId: number,
+        home: string,
+        away: string,
+        homeStats?: TeamStats,
+        awayStats?: TeamStats
+    ) {
         const rng = new SeededRandom(fixtureId);
 
-        const possibleOutcomes = [
-            { outcome: "Over 2.5 Goals", baseConfidence: 72 },
-            { outcome: "Both Teams To Score", baseConfidence: 68 },
-            { outcome: home + " & BTTS", baseConfidence: 75 },
-            { outcome: away + " & Over 1.5", baseConfidence: 65 },
-            { outcome: "1st Half Over 0.5", baseConfidence: 82 },
-            { outcome: home + " Win & Over 2.5", baseConfidence: 78 },
-            { outcome: "BTTS & Over 2.5", baseConfidence: 74 },
-            { outcome: away + " & BTTS", baseConfidence: 70 },
-            { outcome: home + " HT/FT", baseConfidence: 62 },
-            { outcome: away + " Double Chance", baseConfidence: 80 },
-            { outcome: "Home Win to Nil", baseConfidence: 66 },
-            { outcome: "Multi-Goal 2-4", baseConfidence: 76 },
+        // Per-fixture variation so different matches get different base stats
+        const variation = () => 0.85 + rng.next() * 0.6; // 0.85 - 1.45 multiplier
+
+        // Use real stats if available, otherwise use varied defaults
+        const hAvgScored = homeStats ? homeStats.avgScored : (1.0 + rng.next() * 0.9);   // 1.0 - 1.9
+        const hAvgConceded = homeStats ? homeStats.avgConceded : (0.7 + rng.next() * 0.8); // 0.7 - 1.5
+        const aAvgScored = awayStats ? awayStats.avgScored : (0.8 + rng.next() * 0.8);   // 0.8 - 1.6
+        const aAvgConceded = awayStats ? awayStats.avgConceded : (0.8 + rng.next() * 0.9); // 0.8 - 1.7
+
+        // Expected goals per team using attack/defense model
+        const homeXG = (hAvgScored + aAvgConceded) / 2;
+        const awayXG = (aAvgScored + hAvgConceded) / 2;
+        const totalXG = homeXG + awayXG;
+
+        // Poisson probabilities
+        const pHomeScores = 1 - Math.exp(-homeXG);
+        const pAwayScores = 1 - Math.exp(-awayXG);
+        const pTotal0 = Math.exp(-totalXG);
+        const pTotal1 = totalXG * Math.exp(-totalXG);
+        const pTotal2 = (totalXG ** 2 / 2) * Math.exp(-totalXG);
+        const pTotal3 = (totalXG ** 3 / 6) * Math.exp(-totalXG);
+        const pTotal4 = (totalXG ** 4 / 24) * Math.exp(-totalXG);
+
+        const pOver15 = 1 - pTotal0 - pTotal1;
+        const pOver25 = 1 - pTotal0 - pTotal1 - pTotal2;
+        const pBTTS = pHomeScores * pAwayScores;
+        const pMulti24 = pTotal2 + pTotal3 + pTotal4;
+
+        // Home/Away win probabilities (simplified from xG gap)
+        const homeAdvantage = homeXG - awayXG;
+        const pHomeWin = Math.min(0.72, Math.max(0.30, 0.45 + homeAdvantage * 0.25));
+        const pAwayWin = Math.min(0.55, Math.max(0.18, 0.30 - homeAdvantage * 0.20));
+        const pDraw = 1 - pHomeWin - pAwayWin;
+
+        // Build ALL markets (always included, no conditional gating)
+        const markets: { outcome: string; probability: number }[] = [
+            { outcome: "Over 2.5 Goals", probability: pOver25 * 100 },
+            { outcome: "Over 1.5 Goals", probability: pOver15 * 100 },
+            { outcome: "Under 2.5 Goals", probability: (1 - pOver25) * 100 },
+            { outcome: "Both Teams To Score", probability: pBTTS * 100 },
+            { outcome: "1st Half Over 0.5", probability: Math.min(90, (0.60 + totalXG * 0.10) * 100) },
+            { outcome: "Multi-Goal 2-4", probability: pMulti24 * 100 },
+            { outcome: home + " to Win", probability: pHomeWin * 100 },
+            { outcome: away + " to Win", probability: pAwayWin * 100 },
+            { outcome: home + " or Draw", probability: (pHomeWin + pDraw) * 100 },
+            { outcome: away + " or Draw", probability: (pAwayWin + pDraw) * 100 },
+            { outcome: home + " & BTTS", probability: pHomeWin * pBTTS * 100 * 1.10 },
+            { outcome: "BTTS & Over 2.5", probability: pBTTS * pOver25 * 100 * 1.15 },
         ];
 
-        const index = fixtureId % possibleOutcomes.length;
-        const best = possibleOutcomes[index];
+        // Only keep markets with probability > 40%
+        const viable = markets.filter(m => m.probability > 40);
+        if (viable.length === 0) viable.push(...markets.slice(0, 4));
 
-        // Deterministic variation 0-7%
-        // Calibrated: never exceed 90%
-        const confidence = Math.min(90, best.baseConfidence + (fixtureId % 8));
+        // Sort descending by probability
+        viable.sort((a, b) => b.probability - a.probability);
 
+        // Weighted random pick from viable markets (favors higher probability)
+        const totalWeight = viable.reduce((sum, m) => sum + m.probability, 0);
+        let roll = rng.next() * totalWeight;
+        let best = viable[0];
+        for (const m of viable) {
+            roll -= m.probability;
+            if (roll <= 0) { best = m; break; }
+        }
+
+        const confidence = Math.min(90, Math.max(55, Math.round(best.probability)));
         return { outcome: best.outcome, confidence };
     }
 
@@ -395,7 +602,7 @@ class SportMonksService {
         // In this implementation, we simulate the full state
         const summary = await this.getMatchSummary(fixtureId);
         const signals = await this.getModelSignals(fixtureId);
-        const mainBet = this.calculateBestPrediction(fixtureId, "Home", "Away");
+        const mainBet = this.calculateBestPrediction(fixtureId, "Home", "Away", undefined, undefined);
 
         PredictionStore.save(fixtureId, {
             summary,
