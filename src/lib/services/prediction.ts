@@ -621,25 +621,68 @@ class SportMonksService {
         const btts = homeScore > 0 && awayScore > 0;
         const homeWin = homeScore > awayScore;
         const awayWin = awayScore > homeScore;
+        const draw = homeScore === awayScore;
         const p = prediction.toLowerCase();
+        const homeName = home.toLowerCase();
+        const awayName = away.toLowerCase();
 
-        // Compound checks FIRST (most specific → least specific)
+        // 1. Team-Specific Outcomes (Most common)
+        if (p.includes(" or draw")) {
+            if (p.includes(homeName)) return homeWin || draw;
+            if (p.includes(awayName)) return awayWin || draw;
+        }
+        if (p.includes(" to win")) {
+            if (p.includes(homeName)) return homeWin;
+            if (p.includes(awayName)) return awayWin;
+        }
+        if (p.includes("(dnb)")) {
+            if (p.includes(homeName)) return homeWin;
+            if (p.includes(awayName)) return awayWin;
+        }
+
+        // 2. Goals & BTTS Combined
         if (p.includes("btts & over 2.5")) return btts && totalGoals > 2.5;
-        if (p.includes("& btts")) return btts && (p.includes(home.toLowerCase()) ? homeWin : awayWin);
+        if (p.includes("& btts")) {
+            const teamWinMatch = p.includes(homeName) ? homeWin : awayWin;
+            return btts && teamWinMatch;
+        }
         if (p.includes("win & over 2.5")) return homeWin && totalGoals > 2.5;
-        if (p.includes("& over 1.5")) return (p.includes(away.toLowerCase()) ? awayWin : homeWin) && totalGoals > 1.5;
-        if (p.includes("home win to nil")) return homeWin && awayScore === 0;
-        if (p.includes("ht/ft")) return homeWin;
-        if (p.includes("double chance")) return awayWin || homeScore === awayScore;
-        if (p.includes("multi-goal 2-4")) return totalGoals >= 2 && totalGoals <= 4;
+        if (p.includes("& over 1.5")) {
+            const teamWinMatch = p.includes(homeName) ? homeWin : (p.includes(awayName) ? awayWin : false);
+            return teamWinMatch && totalGoals > 1.5;
+        }
 
-        // Simple checks
-        if (p.includes("1st half over 0.5")) return totalGoals > 0;
-        if (p === "both teams to score" || p === "btts") return btts;
+        // 3. Simple Markets
+        if (p.includes("both teams to score") || p === "btts") return btts;
+        if (p.includes("over 3.5")) return totalGoals > 3.5;
         if (p.includes("over 2.5")) return totalGoals > 2.5;
         if (p.includes("over 1.5")) return totalGoals > 1.5;
         if (p.includes("over 0.5")) return totalGoals > 0.5;
+        if (p.includes("under 3.5")) return totalGoals < 3.5;
         if (p.includes("under 2.5")) return totalGoals < 2.5;
+        if (p.includes("multi-goal 2-4")) return totalGoals >= 2 && totalGoals <= 4;
+
+        // 4. Handicaps & Scorelines
+        if (p.includes("-0.5")) {
+            if (p.includes(homeName)) return homeWin;
+            if (p.includes(awayName)) return awayWin;
+        }
+        if (p.includes("+0.5")) {
+            if (p.includes(homeName)) return homeWin || draw;
+            if (p.includes(awayName)) return awayWin || draw;
+        }
+        if (p.includes("scoreline")) {
+            const scoreMatch = p.match(/(\d+)-(\d+)/);
+            if (scoreMatch) {
+                return homeScore === parseInt(scoreMatch[1]) && awayScore === parseInt(scoreMatch[2]);
+            }
+        }
+
+        // 5. Special cases & Fallbacks
+        if (p.includes("home win to nil")) return homeWin && awayScore === 0;
+        if (p.includes("double chance")) return awayWin || draw || homeWin;
+        if (p === homeName) return homeWin; // First Team To Score / Outcome fallback
+        if (p === awayName) return awayWin;
 
         return false;
     }
