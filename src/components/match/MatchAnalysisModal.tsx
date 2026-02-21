@@ -129,20 +129,18 @@ export function MatchAnalysisModal({
             footerOpacity.set(newOpacity);
         }
 
-        // Header visibility logic (Desktop only)
-        if (!isMobile) {
-            if (scrollTop > 100 && showHeader) {
-                setShowHeader(false);
-            } else if (scrollTop <= 100 && !showHeader) {
-                setShowHeader(true);
-            }
+        // Header visibility logic (Mobile Only - Desktop scrolls naturally to avoid jumps)
+        if (isMobile) {
+            // Mobile specific logic if needed, currently handled by mobileHeaderOpacity transforms
         }
 
-        // AI Banner logic
-        if (scrollTop > 80 && showBanner) {
-            setShowBanner(false);
-        } else if (scrollTop <= 80 && !showBanner) {
-            setShowBanner(true);
+        // AI Banner logic (Mobile Only - Desktop should scroll naturally)
+        if (isMobile) {
+            if (scrollTop > 80 && showBanner) {
+                setShowBanner(false);
+            } else if (scrollTop <= 80 && !showBanner) {
+                setShowBanner(true);
+            }
         }
 
         // Footer visibility logic (reveal at bottom) - Desktop only
@@ -212,134 +210,120 @@ export function MatchAnalysisModal({
                                 onScroll={handleScroll}
                                 className="flex-1 overflow-y-auto min-h-0 overscroll-contain custom-scrollbar relative"
                             >
-                                {/* Header Section (Inside scroll for natural flow) */}
-                                <AnimatePresence mode="popLayout">
-                                    {(showHeader || isMobile) && (
-                                        <motion.div
-                                            style={isMobile ? {
-                                                opacity: mobileHeaderOpacity,
-                                                scale: mobileHeaderScale
-                                            } : {}}
-                                            initial={isMobile ? false : { height: "auto", opacity: 1, y: 0 }}
-                                            animate={isMobile ? { height: "auto" } : { height: "auto", opacity: 1, y: 0 }}
-                                            exit={{ height: 0, opacity: 0, y: -40 }}
-                                            transition={{ duration: 0.35, ease: "easeInOut" }}
-                                            className="border-b border-white/5 overflow-hidden"
-                                        >
-                                            <div className="p-4 pt-12 md:p-12">
-                                                <div className="flex flex-col lg:flex-row items-center justify-between gap-4 md:gap-12">
-                                                    {/* Team logos & Info */}
-                                                    <div className="flex-1 flex items-center justify-center gap-6 md:gap-16">
-                                                        <div className="flex flex-col items-center gap-2">
-                                                            <div className="w-12 h-12 md:w-32 md:h-32 bg-white/5 rounded-2xl md:rounded-3xl p-2 md:p-4 border border-white/10 shadow-2xl relative group focus-within:ring-2 focus-within:ring-purple-500/50">
-                                                                <div className="absolute inset-0 bg-purple-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                                <img src={homeLogo} alt={homeTeam} className="w-full h-full object-contain relative" />
-                                                            </div>
-                                                            <h2 className="text-sm md:text-2xl font-black text-white uppercase tracking-tight text-center max-w-[120px] md:max-w-none truncate">{homeTeam}</h2>
+                                {/* Header Section (Natural flow on Desktop, Animated on Mobile) */}
+                                <div className="border-b border-white/5">
+                                    <motion.div
+                                        style={isMobile ? {
+                                            opacity: mobileHeaderOpacity,
+                                            scale: mobileHeaderScale
+                                        } : {}}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="p-4 pt-12 md:p-12">
+                                            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 md:gap-12">
+                                                {/* Team logos & Info */}
+                                                <div className="flex-1 flex items-center justify-center gap-6 md:gap-16">
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <div className="w-12 h-12 md:w-32 md:h-32 bg-white/5 rounded-2xl md:rounded-3xl p-2 md:p-4 border border-white/10 shadow-2xl relative group focus-within:ring-2 focus-within:ring-purple-500/50">
+                                                            <div className="absolute inset-0 bg-purple-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <img src={homeLogo} alt={homeTeam} className="w-full h-full object-contain relative" />
                                                         </div>
-
-                                                        <div className="flex flex-col items-center gap-2">
-                                                            <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/5 border border-white/10 text-[9px] md:text-[10px] font-black text-white/40 tracking-[0.2em] uppercase">
-                                                                VS
-                                                            </div>
-                                                            <div className="h-8 md:h-12 w-[1px] bg-gradient-to-b from-white/5 via-white/20 to-white/5" />
-                                                        </div>
-
-                                                        <div className="flex flex-col items-center gap-2">
-                                                            <div className="w-12 h-12 md:w-32 md:h-32 bg-white/5 rounded-2xl md:rounded-3xl p-2 md:p-4 border border-white/10 shadow-2xl relative group focus-within:ring-2 focus-within:ring-purple-500/50">
-                                                                <div className="absolute inset-0 bg-purple-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                                <img src={awayLogo} alt={awayTeam} className="w-full h-full object-contain relative" />
-                                                            </div>
-                                                            <h2 className="text-sm md:text-2xl font-black text-white uppercase tracking-tight text-center max-w-[120px] md:max-w-none truncate">{awayTeam}</h2>
-                                                        </div>
+                                                        <h2 className="text-sm md:text-2xl font-black text-white uppercase tracking-tight text-center max-w-[120px] md:max-w-none truncate">{homeTeam}</h2>
                                                     </div>
 
-                                                    {/* AI Confidence Meter */}
-                                                    <div className="flex flex-col items-center lg:items-end">
-                                                        <div className="relative w-20 h-20 md:w-40 md:h-40 flex items-center justify-center">
-                                                            <svg className="w-full h-full transform -rotate-90">
-                                                                <circle
-                                                                    cx="50%"
-                                                                    cy="50%"
-                                                                    r="45%"
-                                                                    className="stroke-white/5 fill-none"
-                                                                    strokeWidth="8"
-                                                                />
-                                                                <motion.circle
-                                                                    cx="50%"
-                                                                    cy="50%"
-                                                                    r="45%"
-                                                                    className="stroke-purple-500 fill-none"
-                                                                    strokeWidth="8"
-                                                                    strokeLinecap="round"
-                                                                    initial={{ pathLength: 0 }}
-                                                                    animate={{ pathLength: (matchSummary?.overallConfidence || 0) / 100 }}
-                                                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                                                />
-                                                            </svg>
-                                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                                <span className="text-2xl md:text-4xl font-black text-white tracking-tighter">
-                                                                    {matchSummary?.overallConfidence}%
-                                                                </span>
-                                                                <span className="text-[8px] md:text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Confidence</span>
-                                                            </div>
-                                                            <div className="absolute inset-0 bg-purple-500/20 blur-3xl -z-10 rounded-full" />
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/5 border border-white/10 text-[9px] md:text-[10px] font-black text-white/40 tracking-[0.2em] uppercase">
+                                                            VS
                                                         </div>
+                                                        <div className="h-8 md:h-12 w-[1px] bg-gradient-to-b from-white/5 via-white/20 to-white/5" />
+                                                    </div>
+
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <div className="w-12 h-12 md:w-32 md:h-32 bg-white/5 rounded-2xl md:rounded-3xl p-2 md:p-4 border border-white/10 shadow-2xl relative group focus-within:ring-2 focus-within:ring-purple-500/50">
+                                                            <div className="absolute inset-0 bg-purple-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <img src={awayLogo} alt={awayTeam} className="w-full h-full object-contain relative" />
+                                                        </div>
+                                                        <h2 className="text-sm md:text-2xl font-black text-white uppercase tracking-tight text-center max-w-[120px] md:max-w-none truncate">{awayTeam}</h2>
                                                     </div>
                                                 </div>
 
-                                                {/* Match Meta Info */}
-                                                <div className="mt-4 md:mt-12 flex items-center justify-center text-[9px] md:text-[11px] font-bold uppercase tracking-widest text-white/40">
-                                                    <div className="flex items-center gap-1.5 md:gap-2 bg-white/5 px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl border border-white/5">
-                                                        <span className="text-purple-400">KICKOFF:</span> {date} • {time}
+                                                {/* AI Confidence Meter */}
+                                                <div className="flex flex-col items-center lg:items-end">
+                                                    <div className="relative w-20 h-20 md:w-40 md:h-40 flex items-center justify-center">
+                                                        <svg className="w-full h-full transform -rotate-90">
+                                                            <circle
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                r="45%"
+                                                                className="stroke-white/5 fill-none"
+                                                                strokeWidth="8"
+                                                            />
+                                                            <motion.circle
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                r="45%"
+                                                                className="stroke-purple-500 fill-none"
+                                                                strokeWidth="8"
+                                                                strokeLinecap="round"
+                                                                initial={{ pathLength: 0 }}
+                                                                animate={{ pathLength: (matchSummary?.overallConfidence || 0) / 100 }}
+                                                                transition={{ duration: 1.5, ease: "easeOut" }}
+                                                            />
+                                                        </svg>
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                            <span className="text-2xl md:text-4xl font-black text-white tracking-tighter">
+                                                                {matchSummary?.overallConfidence}%
+                                                            </span>
+                                                            <span className="text-[8px] md:text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Confidence</span>
+                                                        </div>
+                                                        <div className="absolute inset-0 bg-purple-500/20 blur-3xl -z-10 rounded-full" />
                                                     </div>
                                                 </div>
                                             </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
 
-                                {/* AI Summary Banner (Inside scroll) */}
-                                <AnimatePresence>
-                                    {(showBanner || isMobile) && (
-                                        <motion.div
-                                            style={isMobile ? { opacity: mobileHeaderOpacity } : {}}
-                                            initial={isMobile ? false : { height: 0, opacity: 0, scaleY: 0 }}
-                                            animate={isMobile ? { height: "auto" } : { height: "auto", opacity: 1, scaleY: 1 }}
-                                            exit={{ height: 0, opacity: 0, scaleY: 0, y: -20 }}
-                                            transition={{ duration: 0.4, ease: "easeInOut" }}
-                                            className={cn(
-                                                "flex-shrink-0 px-6 md:px-12 py-3.5 md:py-5 border-y overflow-hidden origin-top flex flex-col md:flex-row items-center gap-4 md:gap-6",
-                                                isPrime
-                                                    ? "bg-amber-500/10 border-amber-500/20 shadow-[inset_0_0_20px_rgba(251,191,36,0.1)]"
-                                                    : "bg-purple-500/10 border-purple-500/20"
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className={cn(
-                                                    "w-10 h-10 rounded-xl flex items-center justify-center",
-                                                    isPrime
-                                                        ? "bg-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.4)]"
-                                                        : "bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)]"
-                                                )}>
-                                                    <span className="text-white font-black text-lg">AI</span>
+                                            {/* Match Meta Info */}
+                                            <div className="mt-4 md:mt-12 flex items-center justify-center text-[9px] md:text-[11px] font-bold uppercase tracking-widest text-white/40">
+                                                <div className="flex items-center gap-1.5 md:gap-2 bg-white/5 px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl border border-white/5">
+                                                    <span className="text-purple-400">KICKOFF:</span> {date} • {time}
                                                 </div>
-                                                <h4 className={cn(
-                                                    "text-xs font-black uppercase tracking-[0.2em]",
-                                                    isPrime ? "text-amber-400" : "text-white"
-                                                )}>
-                                                    {isPrime ? "Prime Value Insight" : "Match Insight"}
-                                                </h4>
                                             </div>
-                                            <p className={cn(
-                                                "text-sm font-medium leading-relaxed italic",
-                                                isPrime ? "text-amber-100/90" : "text-white/80"
-                                            )}>
-                                                "{matchSummary?.summaryText}"
-                                            </p>
-                                        </motion.div>
+                                        </div>
+                                    </motion.div>
+                                </div>
+
+                                <motion.div
+                                    initial={false}
+                                    style={isMobile ? { opacity: mobileHeaderOpacity } : {}}
+                                    className={cn(
+                                        "flex-shrink-0 px-6 md:px-12 py-3.5 md:py-5 border-y overflow-hidden flex flex-col md:flex-row items-center gap-4 md:gap-6 sticky top-0 md:relative z-40 transition-colors duration-300",
+                                        isPrime
+                                            ? "bg-amber-500/10 border-amber-500/20 shadow-[inset_0_0_20px_rgba(251,191,36,0.1)]"
+                                            : "bg-purple-500/10 border-purple-500/20"
                                     )}
-                                </AnimatePresence>
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-xl flex items-center justify-center",
+                                            isPrime
+                                                ? "bg-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.4)]"
+                                                : "bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+                                        )}>
+                                            <span className="text-white font-black text-lg">AI</span>
+                                        </div>
+                                        <h4 className={cn(
+                                            "text-xs font-black uppercase tracking-[0.2em]",
+                                            isPrime ? "text-amber-400" : "text-white"
+                                        )}>
+                                            {isPrime ? "Prime Value Insight" : "Match Insight"}
+                                        </h4>
+                                    </div>
+                                    <p className={cn(
+                                        "text-sm font-medium leading-relaxed italic",
+                                        isPrime ? "text-amber-100/90" : "text-white/80"
+                                    )}>
+                                        "{matchSummary?.summaryText}"
+                                    </p>
+                                </motion.div>
 
                                 {/* Main Content Wrapper */}
                                 <div className="p-6 md:p-12">
