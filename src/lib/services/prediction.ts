@@ -889,14 +889,19 @@ class SportMonksService {
             // 16. Double Chance & Under (Stability - Option 3)
             { outcome: home + " or Draw & Under 4.5", probability: Math.min(98, (pHomeWin + pDraw) * (1 - pTotal5Plus) * 100 * 1.1) },
             // 17. Result & Over 1.5 (Value - Option 3 - 1.2x Correlation)
-            { outcome: home + " Win & Over 1.5", probability: Math.min(95, pHomeWin * pOver15 * 100 * 1.2) }
+            { outcome: home + " Win & Over 1.5", probability: Math.min(95, pHomeWin * pOver15 * 100 * 1.2) },
+            // 18. Heavy Handicap (Oracle Upgrade - Option 7)
+            { outcome: home + " -1.5", probability: Math.max(20, (pHomeWin * pOver25 * 0.8) * 100) },
+            // 19. Goal Lines (Alternative)
+            { outcome: "Over 3.5 Goals", probability: pTotal5Plus * 100 + (pTotal4 * 0.5) * 100 }
         ];
 
         // Also add some extra common ones for variety
         markets.push(
             { outcome: "Under 3.5 Goals", probability: pUnder35 * 100 },
             { outcome: "Multi-Goal 2-4", probability: pMulti24 * 100 },
-            { outcome: away + " or Draw", probability: (pAwayWin + pDraw) * 100 }
+            { outcome: away + " or Draw", probability: (pAwayWin + pDraw) * 100 },
+            { outcome: away + " -1.5", probability: Math.max(10, (pAwayWin * pOver25 * 0.7) * 100) }
         );
 
         // Return ALL markets sorted by raw probability for the core AI result
@@ -1011,39 +1016,56 @@ class SportMonksService {
             };
         });
 
-        // SORT: Value-Driven Synchronization (Favors Edge & Probability)
+        // SORT: The Oracle Utility Engine (Favors ROI & Temptation)
         const allOdds = providedOdds || [];
 
         const listWithStats = list.map(m => {
             const matchOdds = this.filterOdds(allOdds, m.prediction, home, away);
-            const odds = matchOdds.length > 0 ? Math.max(...matchOdds.map((o: any) => o.odds_value)) : 1.5; // Default modest odds if none
+            const odds = matchOdds.length > 0 ? Math.max(...matchOdds.map((o: any) => o.odds_value)) : 1.5;
 
             const kelly = this.calculateKelly(m.probability, odds);
+
+            // ORACLE UTILITY SCORE: Probability * (Odds ^ 1.35)
+            // This aggressively rewards higher odds while maintaining a safety floor.
+            const utilityScore = (m.probability / 100) * Math.pow(odds, 1.35);
 
             return {
                 ...m,
                 odds,
                 starRating: kelly.stars,
                 kellyStake: kelly.stake,
+                utilityScore,
                 contextualStat: kelly.rating,
-                microDetail: `Edge Analysis: ${kelly.stars}/10 Rating • Suggested Stake: ${kelly.stake}%`
+                microDetail: `Oracle Analysis: ${kelly.stars}/10 Value • Estimated ROI: ${((utilityScore - 1) * 100).toFixed(1)}%`
             };
         });
 
-        // Final sorting based on Value Score (Kelly * Prob)
+        // Final sorting based on Utility Score (ROI + Safety)
         listWithStats.sort((a, b) => {
-            // Priority 1: Star Rating (Value Edge)
-            if (b.starRating !== a.starRating) return b.starRating! - a.starRating!;
-            // Priority 2: Raw Probability
-            return b.probability - a.probability;
+            // Priority 1: High Utility (Temptation + Probability)
+            return (b.utilityScore || 0) - (a.utilityScore || 0);
         });
 
+        // MAIN PREDICTION FILTER: Banning "Boring" low-odds picks for the banner
+        let bestOraclePick = listWithStats.find(item => {
+            const name = item.prediction.toLowerCase();
+            const isBoring = name.includes("or draw") || name.includes("over 1.5 goals") || name.includes("double chance");
+
+            // If it's boring, it MUST have at least 1.45 odds to be the face of the match
+            if (isBoring && item.odds < 1.45) return false;
+
+            // Otherwise, we want it if it's high probability (>65%)
+            return item.probability > 65;
+        });
+
+        // Fallback if everyone is filtered (rare)
+        if (!bestOraclePick) bestOraclePick = listWithStats[0];
+
         const sortedResult = result;
-        // The #1 ranked item now represents the best balance of safety and value
-        sortedResult.outcome = listWithStats[0].prediction;
-        sortedResult.confidence = listWithStats[0].probability;
-        sortedResult.starRating = listWithStats[0].starRating;
-        sortedResult.kellyStake = listWithStats[0].kellyStake;
+        sortedResult.outcome = bestOraclePick.prediction;
+        sortedResult.confidence = bestOraclePick.probability;
+        sortedResult.starRating = bestOraclePick.starRating;
+        sortedResult.kellyStake = bestOraclePick.kellyStake;
 
         // Update cache
         const summary = await this.getMatchSummary(fixtureId);
