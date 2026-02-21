@@ -590,15 +590,21 @@ class SportMonksService {
 
         if (allFixtures.length === 0) return [];
 
+        // FILTER: Remove finished games (5=FT, 7=AET, 8=PENS) from the "Upcoming" view
+        // We only want Scheduled, Live (INPLAY), or Delayed games here.
+        const activeFixtures = allFixtures.filter((f: any) => ![5, 7, 8].includes(f.state_id));
+
+        if (activeFixtures.length === 0) return [];
+
         // Collect unique season IDs and fetch standings
-        const seasonIds = [...new Set(allFixtures.map((f: any) => f.season_id).filter(Boolean))];
+        const seasonIds = [...new Set(activeFixtures.map((f: any) => f.season_id).filter(Boolean))];
         const allTeamStats = new Map<number, TeamStats>();
         for (const sid of seasonIds) {
             const stats = await this.getTeamStats(sid);
             stats.forEach((v, k) => allTeamStats.set(k, v));
         }
 
-        return Promise.all(allFixtures.map(async (f: any) => {
+        return Promise.all(activeFixtures.map(async (f: any) => {
             const homeP = f.participants.find((p: any) => p.meta.location === "home");
             const awayP = f.participants.find((p: any) => p.meta.location === "away");
             const home = homeP?.name || "Home Team";
@@ -637,7 +643,8 @@ class SportMonksService {
 
     async getPastFixtures(days: number = 3): Promise<PastMatch[]> {
         const now = new Date();
-        const endDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        // Shift end date to TODAY so we catch games that just finished an hour ago
+        const endDate = now.toISOString().split('T')[0];
         const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
         const allFixtures = await this.fetchAllPages(`/fixtures/between/${startDate}/${endDate}`, {
@@ -656,7 +663,7 @@ class SportMonksService {
         }
 
         return Promise.all(allFixtures
-            .filter((f: any) => f.state_id === 5)
+            .filter((f: any) => [5, 7, 8].includes(f.state_id))
             .map(async (f: any) => {
                 const homeP = f.participants.find((p: any) => p.meta.location === "home");
                 const awayP = f.participants.find((p: any) => p.meta.location === "away");
