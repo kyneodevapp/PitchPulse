@@ -40,6 +40,8 @@ export interface MarketAnalysis {
     odds?: number;
     starRating?: number;
     kellyStake?: number;
+    expectedValue?: number;
+    isElite?: boolean;
 }
 
 export interface ModelSignal {
@@ -61,6 +63,8 @@ export interface PredictionResult {
     outcome: string;
     confidence: number;
     isPrime?: boolean;
+    isElite?: boolean;
+    expectedValue?: number;
     starRating?: number;
     kellyStake?: number;
     candidates?: PredictionCandidate[];
@@ -1033,8 +1037,16 @@ class SportMonksService {
             const kelly = this.calculateKelly(m.probability, odds);
 
             // ORACLE UTILITY SCORE: Probability * (Odds ^ 1.35)
-            // This aggressively rewards higher odds while maintaining a safety floor.
             const utilityScore = (m.probability / 100) * Math.pow(odds, 1.35);
+
+            // INSTITUTIONAL EV: (Prob * Odds) - 1
+            const ev = (m.probability / 100 * odds) - 1;
+
+            // ELITE VALUE CRITERIA: Prob >= 65%, Odds >= 2.20, EV > 5%
+            // Prohibited: Double Chance (12), O/U 0.5 (varies, check name)
+            const name = m.prediction.toLowerCase();
+            const isProhibited = name.includes("or draw") || name.includes("over 0.5") || name.includes("double chance");
+            const isElite = !isProhibited && m.probability >= 65 && odds >= 2.20 && ev > 0.05;
 
             return {
                 ...m,
@@ -1042,19 +1054,26 @@ class SportMonksService {
                 starRating: kelly.stars,
                 kellyStake: kelly.stake,
                 utilityScore,
+                expectedValue: ev,
+                isElite,
                 contextualStat: kelly.rating,
-                microDetail: `Oracle Analysis: ${kelly.stars}/10 Value • Estimated ROI: ${((utilityScore - 1) * 100).toFixed(1)}%`
+                microDetail: isElite
+                    ? `INSTITUTIONAL ELITE: ${m.probability}% Prob • ${odds.toFixed(2)} Odds • +${(ev * 100).toFixed(1)}% EV`
+                    : `Oracle Analysis: ${kelly.stars}/10 Value • Estimated ROI: ${((utilityScore - 1) * 100).toFixed(1)}%`
             };
         });
 
-        // Final sorting based on Utility Score (ROI + Safety)
+        // Final sorting: Elite first, then by Utility Score
         listWithStats.sort((a, b) => {
-            // Priority 1: High Utility (Temptation + Probability)
+            if (a.isElite && !b.isElite) return -1;
+            if (!a.isElite && b.isElite) return 1;
             return (b.utilityScore || 0) - (a.utilityScore || 0);
         });
 
-        // MAIN PREDICTION FILTER: Banning "Boring" low-odds picks for the banner
-        let bestOraclePick = listWithStats.find(item => {
+        // MAIN PREDICTION FILTER: Prioritize ELITE then Oracle
+        const elitePick = listWithStats.find(item => item.isElite);
+
+        let bestOraclePick = elitePick || listWithStats.find(item => {
             const name = item.prediction.toLowerCase();
             const isBoring = name.includes("or draw") || name.includes("over 1.5 goals") || name.includes("double chance");
 
@@ -1311,6 +1330,8 @@ class SportMonksService {
             outcome: topBet.prediction,
             confidence: topBet.probability,
             isPrime,
+            isElite: topBet.isElite,
+            expectedValue: topBet.expectedValue,
             odds,
             bet365: b365?.odds_value || null,
             best: normalized[0] || null,

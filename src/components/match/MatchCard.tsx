@@ -41,6 +41,8 @@ export function MatchCard({
     const [dynamicPrediction, setDynamicPrediction] = useState(prediction);
     const [dynamicConfidence, setDynamicConfidence] = useState(confidence);
     const [isPrime, setIsPrime] = useState(false);
+    const [isElite, setIsElite] = useState(false);
+    const [expectedValue, setExpectedValue] = useState<number>(0);
     const [starRating, setStarRating] = useState<number>(0);
     const [kellyStake, setKellyStake] = useState<number>(0);
 
@@ -63,6 +65,8 @@ export function MatchCard({
                         setDynamicPrediction(data.suggestedBet.outcome);
                         setDynamicConfidence(data.suggestedBet.confidence);
                         setIsPrime(!!data.suggestedBet.isPrime);
+                        setIsElite(!!data.suggestedBet.isElite);
+                        setExpectedValue(data.suggestedBet.expectedValue || 0);
                         setBet365Odds(data.suggestedBet.bet365 || data.suggestedBet.odds || null);
                         setStarRating(data.suggestedBet.starRating || 0);
                         setKellyStake(data.suggestedBet.kellyStake || 0);
@@ -170,7 +174,7 @@ export function MatchCard({
                                             className={cn(
                                                 "w-1.5 h-1.5",
                                                 i < starRating
-                                                    ? (isPrime ? "text-amber-400 fill-amber-400" : "text-purple-400 fill-purple-400")
+                                                    ? (isElite ? "text-cyan-400 fill-cyan-400" : (isPrime ? "text-amber-400 fill-amber-400" : "text-purple-400 fill-purple-400"))
                                                     : "text-white/10 fill-transparent"
                                             )}
                                         />
@@ -178,14 +182,20 @@ export function MatchCard({
                                 </div>
                                 <span className={cn(
                                     "font-black tracking-[0.2em] text-[10px] whitespace-nowrap flex items-center gap-1.5",
-                                    (starRating < 4 && dynamicConfidence < 60) ? "text-red-400" : (isPrime ? "text-amber-400" : "text-white/40")
+                                    (starRating < 4 && dynamicConfidence < 60) ? "text-red-400" : (isElite ? "text-cyan-400" : (isPrime ? "text-amber-400" : "text-white/40"))
                                 )}>
-                                    {isPrime && starRating >= 4 && (
+                                    {isElite && (
+                                        <span className="px-1 py-0.5 rounded-sm bg-cyan-400/10 border border-cyan-400/20 text-[8px] tracking-[0.1em] opacity-80 animate-pulse">ELITE QUANT</span>
+                                    )}
+                                    {isPrime && !isElite && starRating >= 4 && (
                                         <span className="px-1 py-0.5 rounded-sm bg-amber-400/10 border border-amber-400/20 text-[8px] tracking-[0.1em] opacity-80">ORACLE</span>
                                     )}
-                                    {(starRating < 4 && dynamicConfidence < 60) ? "LOW VALUE / AVOID" : (isPrime ? "PRIME VALUE BET" : "SAFE PICK")}
+                                    {(starRating < 4 && dynamicConfidence < 60) ? "LOW VALUE / AVOID" : (isElite ? "ELITE VALUE BET" : (isPrime ? "PRIME VALUE BET" : "SAFE PICK"))}
                                 </span>
-                                {isPrime && starRating >= 4 && (
+                                {isElite && (
+                                    <div className="h-[2px] w-12 bg-gradient-to-r from-cyan-400/0 via-cyan-400/60 to-cyan-400/0 rounded-full animate-pulse shadow-[0_0_12px_rgba(34,211,238,0.6)]" />
+                                )}
+                                {isPrime && !isElite && starRating >= 4 && (
                                     <div className="h-[2px] w-12 bg-gradient-to-r from-amber-400/0 via-amber-400/60 to-amber-400/0 rounded-full animate-pulse shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
                                 )}
                             </div>
@@ -198,10 +208,12 @@ export function MatchCard({
                                 </span>
                                 {bet365Odds && (
                                     <span className={cn(
-                                        "font-black text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap",
-                                        isPrime
-                                            ? "bg-amber-400/20 text-amber-400 border border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.3)]"
-                                            : "bg-emerald-400/10 text-emerald-400"
+                                        "font-black text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap animate-in fade-in zoom-in h-[22px] flex items-center justify-center",
+                                        isElite
+                                            ? "bg-cyan-400/20 text-cyan-400 border border-cyan-400/30 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
+                                            : (isPrime
+                                                ? "bg-amber-400/20 text-amber-400 border border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.3)]"
+                                                : "bg-emerald-400/10 text-emerald-400")
                                     )}>
                                         @ {bet365Odds.toFixed(2)}
                                     </span>
@@ -216,17 +228,26 @@ export function MatchCard({
                             animate={{ width: `${dynamicConfidence}%` }}
                             className={cn(
                                 "absolute inset-y-0 left-0 rounded-full",
-                                isPrime
-                                    ? "bg-gradient-to-r from-amber-500 to-yellow-300 shadow-[0_0_10px_rgba(251,191,36,0.4)]"
-                                    : "bg-gradient-to-r from-purple-600 to-indigo-600"
+                                isElite
+                                    ? "bg-gradient-to-r from-cyan-600 to-emerald-400 shadow-[0_0_10px_rgba(34,211,238,0.4)]"
+                                    : (isPrime
+                                        ? "bg-gradient-to-r from-amber-500 to-yellow-300 shadow-[0_0_10px_rgba(251,191,36,0.4)]"
+                                        : "bg-gradient-to-r from-purple-600 to-indigo-600")
                             )}
                         />
                     </div>
 
                     <div className="flex items-center justify-between text-[10px] font-black tracking-[0.2em] uppercase">
-                        <span className={isPrime ? "text-amber-400/60" : "text-white/40"}>AI CONFIDENCE</span>
-                        <span className={isPrime ? "text-amber-400" : "text-white/60"}>{dynamicConfidence}%</span>
+                        <span className={isElite ? "text-cyan-400/60" : (isPrime ? "text-amber-400/60" : "text-white/40")}>AI CONFIDENCE</span>
+                        <span className={isElite ? "text-cyan-400" : (isPrime ? "text-amber-400" : "text-white/60")}>{dynamicConfidence}%</span>
                     </div>
+
+                    {isElite && expectedValue > 0 && (
+                        <div className="flex items-center justify-between text-[10px] font-black tracking-[0.2em] uppercase mt-2">
+                            <span className="text-emerald-400/60">EXPECTED VALUE</span>
+                            <span className="text-emerald-400">+{(expectedValue * 100).toFixed(1)}%</span>
+                        </div>
+                    )}
 
                     {bestBookmaker && bestBookmaker.odds > (bet365Odds || 0) && (
                         <div className="text-[9px] font-bold text-amber-400/70 text-right tracking-wider">
