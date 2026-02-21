@@ -6,10 +6,13 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { sportmonksService, MarketAnalysis, MatchSummary, ModelSignal, BestOdds } from "@/lib/services/prediction";
 import { MarketGrid } from "./MarketGrid";
+import { Paywall } from "./Paywall";
 import { cn } from "@/lib/utils";
 import { useWatchlist } from "@/lib/hooks/useWatchlist";
+import { useSubscription } from "@/lib/hooks/useSubscription";
 import { useToast } from "@/lib/hooks/useToast";
 import { ToastContainer } from "../ui/Toast";
+import { useRouter } from "next/navigation";
 
 interface MatchAnalysisModalProps {
     isOpen: boolean;
@@ -48,6 +51,9 @@ export function MatchAnalysisModal({
     const [showBanner, setShowBanner] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
     const [oddsComparison, setOddsComparison] = useState<BestOdds[]>([]);
+
+    const router = useRouter();
+    const { isLoaded, isSubscribed, trialActive, daysLeft, isTrialExpired } = useSubscription();
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const scrollY = useMotionValue(0);
@@ -320,8 +326,15 @@ export function MatchAnalysisModal({
                                     {isLoading ? (
                                         <div className="flex flex-col items-center justify-center py-24 gap-4">
                                             <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
-                                            <span className="text-xs font-black uppercase tracking-[0.3em] text-white/20 text-center px-4">Crunching thousands of data points...</span>
+                                            <div className="flex flex-col items-center gap-1">
+                                                <span className="text-xs font-black uppercase tracking-[0.3em] text-white/20 text-center px-4">Crunching thousands of data points...</span>
+                                                {trialActive && !isSubscribed && (
+                                                    <span className="text-[10px] font-bold text-purple-400/40 uppercase tracking-widest">Trial Active: {daysLeft} days remaining</span>
+                                                )}
+                                            </div>
                                         </div>
+                                    ) : isTrialExpired ? (
+                                        <Paywall onUpgrade={() => router.push("/api/checkout")} />
                                     ) : (
                                         <div className="space-y-16">
                                             <MarketGrid markets={markets} />

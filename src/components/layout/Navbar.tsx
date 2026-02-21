@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
+import { useSubscription } from "@/lib/hooks/useSubscription";
+
 const navItems = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "History", href: "/history", icon: History },
@@ -14,6 +16,7 @@ const navItems = [
 
 export function Navbar() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { isSubscribed, trialActive, daysLeft } = useSubscription();
 
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/50 backdrop-blur-xl">
@@ -58,7 +61,15 @@ export function Navbar() {
                                 </button>
                             </SignedOut>
                             <SignedIn>
-                                <UserButton />
+                                <div className="flex items-center gap-4">
+                                    {!isSubscribed && trialActive && (
+                                        <div className="hidden lg:flex flex-col items-end">
+                                            <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Pro Trial</span>
+                                            <span className="text-[8px] font-bold text-white/40 uppercase">{daysLeft} days left</span>
+                                        </div>
+                                    )}
+                                    <UserButton />
+                                </div>
                             </SignedIn>
                         </div>
 
