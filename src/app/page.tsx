@@ -1,6 +1,7 @@
 import { Hero } from "@/components/layout/Hero";
 import { MatchCard } from "@/components/match/MatchCard";
 import { sportmonksService, Match } from "@/lib/services/prediction";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import Link from "next/link";
 
 export const dynamic = 'force-dynamic';
@@ -70,11 +71,9 @@ export default async function Home() {
 
             <footer className="container mx-auto px-4 py-12 border-t border-white/5 mt-auto">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-600 rounded flex items-center justify-center">
-                            <span className="text-[10px] font-bold">P</span>
-                        </div>
-                        <span className="text-sm font-bold opacity-60">PitchPulse © 2026</span>
+                    <div className="flex items-center gap-3">
+                        <BrandLogo size="sm" showText={true} />
+                        <span className="text-[10px] font-bold opacity-20 uppercase tracking-[0.2em] ml-2">© 2026</span>
                     </div>
                     <div className="flex items-center gap-8 text-xs font-medium text-white/30 uppercase tracking-widest">
                         <a href="#" className="hover:text-white transition-colors">Terms</a>

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 import { useSubscription } from "@/lib/hooks/useSubscription";
+import { BrandLogo } from "../ui/BrandLogo";
 
 const navItems = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -22,17 +23,8 @@ export function Navbar() {
         <nav className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/50 backdrop-blur-xl">
             <div className="container mx-auto px-4">
                 <div className="flex h-16 items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2">
-                        <motion.div
-                            initial={{ rotate: -10 }}
-                            animate={{ rotate: 0 }}
-                            className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center"
-                        >
-                            <LayoutDashboard className="w-5 h-5 text-white" />
-                        </motion.div>
-                        <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-                            PitchPulse
-                        </span>
+                    <Link href="/" className="group">
+                        <BrandLogo showText={true} />
                     </Link>
 
                     <div className="hidden md:flex items-center gap-6">
