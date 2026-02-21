@@ -19,7 +19,8 @@ export function useSubscription() {
     const isSubscribed = stripeStatus === "active";
 
     // 7-day trial logic
-    const createdAt = new Date(user.createdAt).getTime();
+    const createdAtDate = user.createdAt || new Date();
+    const createdAt = new Date(createdAtDate).getTime();
     const now = Date.now();
     const trialDuration = 7 * 24 * 60 * 60 * 1000;
     const trialEndsAt = createdAt + trialDuration;
