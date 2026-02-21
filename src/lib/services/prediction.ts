@@ -81,7 +81,7 @@ class SeededRandom {
     }
 }
 
-const PREDICTION_CACHE_KEY = "pitchpulse_prediction_cache_v4";
+const PREDICTION_CACHE_KEY = "pitchpulse_prediction_cache_v5";
 
 class PredictionStore {
     private static getCache(): Record<number, any> {
@@ -1052,29 +1052,37 @@ class SportMonksService {
         // 1. Match Outcome Categories
         if (o.includes("(dnb)")) return "Draw No Bet";
         if (o.includes("-0.5") || o.includes("+0.5") || o.includes("handicap")) return "Asian Handicap";
+        if (o.includes("ht/ft") || (o.includes("/") && o.length < 15)) return "HT/FT";
+        if (o.includes("at ht") || o.includes("draw at ht")) return "Half Time Result";
+
+        // 2. BTTS & Combinations
+        if (o.includes("btts &") || o.includes("& yes") || o.includes("& btts")) {
+            if (o.includes("over 2.5") || o.includes("under 2.5")) return "Total Goals/BTTS";
+            return "Result/BTTS";
+        }
+        if (o.includes("both teams to score") || o === "btts") return "BTTS";
+
+        // 3. Goal Related (Match-wide vs Team-specific)
+        if (o.includes("1st half")) return "1st Half Goals";
+
+        if (o.includes("over") || o.includes("under")) {
+            // Check if it's a team goal (contains a team name-like string, tricky but usually includes 'Over/Under' + a value)
+            const hasOverUnder = o.includes("over 1.5") || o.includes("over 2.5") || o.includes("under 3.5");
+            if (hasOverUnder && o.split(" ").length > 3) return "Team Total Goals"; // e.g. "Man Utd Over 1.5"
+            if (o.includes("over 1.5 goals")) return "Goal Line";
+            return "Over/Under";
+        }
+
+        // 4. Other
+        if (o.includes("scoreline")) return "Correct Score";
+
         if (o.includes("win") || o.includes("draw")) {
             if (o.includes("or draw")) return "Double Chance";
-            if (o.includes("& btts")) return "Result/BTTS";
             return "Fulltime Result";
         }
 
-        // 2. Goal Related Categories
-        if (o.includes("1st half")) return "1st Half Goals";
-        if (o.includes("btts &") || o.includes("& yes")) return "Total Goals/BTTS";
-        if (o.includes("both teams to score") || o === "btts") return "BTTS";
-        if (o.includes("over") || o.includes("under")) {
-            if (o.includes("over 1.5 goals")) return "Goal Line"; // Map Over 1.5 to Goal Line specifically if needed
-            return "Over/Under";
-        }
-        if (o.includes("multi-goal")) return "Multi-Goal";
-
-        // 3. Advanced Categories
-        if (o.includes("scoreline")) return "Correct Score";
-        if (o.includes("ht/ft") || o.includes("/") && o.length < 15) return "HT/FT";
-        if (o.includes("at ht")) return "Half Time Result";
-
-        // Fallback for names we explicitly passed in calculateBestPrediction
-        if (o.includes("over 1.5")) return "Goal Line";
+        // Fallback or specific team name (usually First Team To Score)
+        if (o.length > 0 && !o.includes(" ")) return "First Team To Score";
 
         return "Special Market";
     }
