@@ -18,9 +18,10 @@ export async function GET(request: Request) {
                 fixtureId, prediction, homeTeam, awayTeam
             );
 
-            // Calculate Value Bet if we have team names (needed for stats)
+            // Calculate Value Bet if we have team names
             let valueBet = null;
             if (homeTeam && awayTeam) {
+                // We pass undefined for Stats/Form as calculateValueBet -> getMarketAnalyses will fetch them accurately
                 const result = sportmonksService.calculateBestPrediction(fixtureId, homeTeam, awayTeam);
                 if (result.candidates) {
                     valueBet = await sportmonksService.calculateValueBet(fixtureId, result.candidates, homeTeam, awayTeam);

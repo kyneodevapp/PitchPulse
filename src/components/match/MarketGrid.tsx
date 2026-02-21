@@ -7,14 +7,16 @@ interface MarketGridProps {
 }
 
 export function MarketGrid({ markets }: MarketGridProps) {
-    const outcomeMarkets = markets.filter(m => ["Fulltime Result", "Double Chance", "Draw No Bet", "Asian Handicap"].includes(m.marketName));
-    const goalMarkets = markets.filter(m => ["Over/Under", "BTTS", "Total Goals/BTTS", "Team Total Goals", "1st Half Goals", "Goal Line"].includes(m.marketName));
-    const advancedMarkets = markets.filter(m => ["Correct Score", "First Team To Score", "Result/BTTS", "Half Time Result", "HT/FT"].includes(m.marketName));
+    const outcomeMarkets = markets.filter(m => ["Fulltime Result", "Double Chance", "Draw No Bet", "Asian Handicap", "Half Time Result", "HT/FT"].includes(m.marketName));
+    const ouGoalsMarkets = markets.filter(m => ["Over/Under", "Goal Line", "1st Half Goals"].includes(m.marketName));
+    const teamGoalsMarkets = markets.filter(m => ["Team Total Goals", "First Team To Score", "BTTS"].includes(m.marketName));
+    const advancedMarkets = markets.filter(m => ["Correct Score", "Result/BTTS", "Total Goals/BTTS"].includes(m.marketName));
 
     const categoryInsights: Record<string, string> = {
         "Match Outcome": "Model favors home resilience but sees draw probability rising in low-tempo matches.",
-        "Goals": "Aggressive pressing data suggests high likelihood of BTTS despite low recent scorelines.",
-        "Advanced": "High volatility in late-game signals makes 'Result / BTTS' the higher value expert play."
+        "Over/Under Goals": "Match-wide volume data suggests active final thirds with high likelihood of multi-goal breakthroughs.",
+        "Team Goals": "Team-specific xG spikes indicate strong offensive conversion rates for clinical finishes.",
+        "Advanced Analysis": "Complex market signals show high value in combined outcomes for strategic precision."
     };
 
     const renderGroup = (title: string, items: MarketAnalysis[]) => (
@@ -111,8 +113,9 @@ export function MarketGrid({ markets }: MarketGridProps) {
     return (
         <div className="space-y-24">
             {outcomeMarkets.length > 0 && renderGroup("Match Outcome", outcomeMarkets)}
-            {goalMarkets.length > 0 && renderGroup("Goals", goalMarkets)}
-            {advancedMarkets.length > 0 && renderGroup("Advanced", advancedMarkets)}
+            {ouGoalsMarkets.length > 0 && renderGroup("Over/Under Goals", ouGoalsMarkets)}
+            {teamGoalsMarkets.length > 0 && renderGroup("Team Goals", teamGoalsMarkets)}
+            {advancedMarkets.length > 0 && renderGroup("Advanced Analysis", advancedMarkets)}
         </div>
     );
 }

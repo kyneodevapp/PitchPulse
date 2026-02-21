@@ -81,7 +81,7 @@ class SeededRandom {
     }
 }
 
-const PREDICTION_CACHE_KEY = "pitchpulse_prediction_cache_v2";
+const PREDICTION_CACHE_KEY = "pitchpulse_prediction_cache_v4";
 
 class PredictionStore {
     private static getCache(): Record<number, any> {
@@ -115,6 +115,13 @@ interface TeamStats {
     gamesPlayed: number;
     avgScored: number;
     avgConceded: number;
+    rank: number;
+}
+
+interface TeamForm {
+    avgScored: number;
+    avgConceded: number;
+    ppg: number; // Points Per Game (last 5-10)
 }
 
 class SportMonksService {
@@ -237,6 +244,7 @@ class SportMonksService {
                         gamesPlayed: gp,
                         avgScored: gp > 0 ? gf / gp : 1.2,
                         avgConceded: gp > 0 ? ga / gp : 1.2,
+                        rank: Number(row.position) || 10,
                     });
                 }
             }
@@ -244,8 +252,61 @@ class SportMonksService {
             console.error("Failed to fetch standings for season", seasonId, e);
         }
 
-        this.standingsCache.set(seasonId, { timestamp: Date.now(), teams: teamMap });
         return teamMap;
+    }
+
+    private formCache: Map<number, { timestamp: number; form: TeamForm }> = new Map();
+    private readonly FORM_CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
+
+    private async getTeamForm(teamId: number): Promise<TeamForm> {
+        const cached = this.formCache.get(teamId);
+        if (cached && Date.now() - cached.timestamp < this.FORM_CACHE_TTL) {
+            return cached.form;
+        }
+
+        try {
+            // Fetch last 10 finished fixtures for this team
+            const data = await this.fetchSportMonks(`/fixtures/participants/${teamId}`, {
+                include: "scores",
+                filters: "fixtureStates:5", // 5 = Finished
+                per_page: "10",
+                order: "starting_at:desc"
+            });
+
+            if (data?.data && Array.isArray(data.data)) {
+                const recentMatches = data.data;
+                let gf = 0, ga = 0, points = 0;
+
+                for (const m of recentMatches) {
+                    const isHome = m.participants?.find((p: any) => p.id === teamId)?.meta?.location === "home";
+                    const hScore = m.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "home")?.score?.goals ?? 0;
+                    const aScore = m.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "away")?.score?.goals ?? 0;
+
+                    const teamScore = isHome ? hScore : aScore;
+                    const oppScore = isHome ? aScore : hScore;
+
+                    gf += teamScore;
+                    ga += oppScore;
+
+                    if (teamScore > oppScore) points += 3;
+                    else if (teamScore === oppScore) points += 1;
+                }
+
+                const gp = recentMatches.length || 1;
+                const form = {
+                    avgScored: gf / gp,
+                    avgConceded: ga / gp,
+                    ppg: points / gp
+                };
+                this.formCache.set(teamId, { timestamp: Date.now(), form });
+                return form;
+            }
+        } catch (e) {
+            console.error("Failed to fetch form for team", teamId, e);
+        }
+
+        const defaultForm = { avgScored: 1.2, avgConceded: 1.2, ppg: 1.0 };
+        return defaultForm;
     }
 
     // ============ ODDS ============
@@ -529,7 +590,7 @@ class SportMonksService {
             stats.forEach((v, k) => allTeamStats.set(k, v));
         }
 
-        return allFixtures.map((f: any) => {
+        return Promise.all(allFixtures.map(async (f: any) => {
             const homeP = f.participants.find((p: any) => p.meta.location === "home");
             const awayP = f.participants.find((p: any) => p.meta.location === "away");
             const home = homeP?.name || "Home Team";
@@ -537,8 +598,16 @@ class SportMonksService {
             const homeStats = allTeamStats.get(homeP?.id);
             const awayStats = allTeamStats.get(awayP?.id);
 
+            // Fetch form on-demand (handled by cache)
+            const [homeForm, awayForm] = await Promise.all([
+                homeP?.id ? this.getTeamForm(homeP.id) : Promise.resolve(undefined),
+                awayP?.id ? this.getTeamForm(awayP.id) : Promise.resolve(undefined)
+            ]);
+
             const cached = PredictionStore.get(f.id);
-            const bestBet = cached?.mainPrediction || this.calculateBestPrediction(f.id, home, away, homeStats, awayStats);
+            const bestBet = cached?.mainPrediction || this.calculateBestPrediction(
+                f.id, home, away, homeStats, awayStats, homeForm, awayForm
+            );
 
             return {
                 id: f.id,
@@ -555,7 +624,7 @@ class SportMonksService {
                 confidence: bestBet.confidence,
                 candidates: bestBet.candidates,
             };
-        });
+        }));
     }
 
     async getPastFixtures(days: number = 3): Promise<PastMatch[]> {
@@ -578,9 +647,9 @@ class SportMonksService {
             stats.forEach((v, k) => allTeamStats.set(k, v));
         }
 
-        return allFixtures
+        return Promise.all(allFixtures
             .filter((f: any) => f.state_id === 5)
-            .map((f: any) => {
+            .map(async (f: any) => {
                 const homeP = f.participants.find((p: any) => p.meta.location === "home");
                 const awayP = f.participants.find((p: any) => p.meta.location === "away");
                 const home = homeP?.name || "Home Team";
@@ -588,10 +657,16 @@ class SportMonksService {
                 const homeStats = allTeamStats.get(homeP?.id);
                 const awayStats = allTeamStats.get(awayP?.id);
 
+                // Fetch form (cached)
+                const [homeForm, awayForm] = await Promise.all([
+                    homeP?.id ? this.getTeamForm(homeP.id) : Promise.resolve(undefined),
+                    awayP?.id ? this.getTeamForm(awayP.id) : Promise.resolve(undefined)
+                ]);
+
                 const homeScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "home")?.score?.goals ?? 0;
                 const awayScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "away")?.score?.goals ?? 0;
 
-                const bestBet = this.calculateBestPrediction(f.id, home, away, homeStats, awayStats);
+                const bestBet = this.calculateBestPrediction(f.id, home, away, homeStats, awayStats, homeForm, awayForm);
                 const hit = this.evaluatePrediction(bestBet.outcome, homeScore, awayScore, home, away);
 
                 return {
@@ -612,7 +687,7 @@ class SportMonksService {
                     status: "FT",
                     prediction_hit: hit,
                 };
-            });
+            }));
     }
 
     // ============ EVALUATION ============
@@ -695,26 +770,56 @@ class SportMonksService {
         home: string,
         away: string,
         homeStats?: TeamStats,
-        awayStats?: TeamStats
+        awayStats?: TeamStats,
+        homeForm?: TeamForm,
+        awayForm?: TeamForm
     ) {
         const rng = new SeededRandom(fixtureId);
 
-        // Per-fixture variation so different matches get different base stats
-        const variation = () => 0.85 + rng.next() * 0.6; // 0.85 - 1.45 multiplier
+        // 1. BASE STATS (Seasonal Averages)
+        const hAvgS = homeStats ? homeStats.avgScored : (1.2 + rng.next() * 0.8);
+        const hAvgC = homeStats ? homeStats.avgConceded : (0.8 + rng.next() * 0.8);
+        const aAvgS = awayStats ? awayStats.avgScored : (1.0 + rng.next() * 0.8);
+        const aAvgC = awayStats ? awayStats.avgConceded : (1.0 + rng.next() * 0.9);
 
-        // Use real stats if available, otherwise use varied defaults (Higher defaults for major leagues)
-        const hAvgScored = homeStats ? homeStats.avgScored : (1.2 + rng.next() * 0.8);   // 1.2 - 2.0
-        const hAvgConceded = homeStats ? homeStats.avgConceded : (0.8 + rng.next() * 0.8); // 0.8 - 1.6
-        const aAvgScored = awayStats ? awayStats.avgScored : (1.0 + rng.next() * 0.8);   // 1.0 - 1.8
-        const aAvgConceded = awayStats ? awayStats.avgConceded : (1.0 + rng.next() * 0.9); // 1.0 - 1.9
+        // 2. MOMENTUM ADJUSTMENT (60% Form / 40% Seasonal)
+        let hS = hAvgS, hC = hAvgC, aS = aAvgS, aC = aAvgC;
 
-        // Expected goals per team using attack/defense model
-        const homeXG = (hAvgScored + aAvgConceded) / 2;
-        const awayXG = (aAvgScored + hAvgConceded) / 2;
+        if (homeForm) {
+            hS = (hAvgS * 0.4) + (homeForm.avgScored * 0.6);
+            hC = (hAvgC * 0.4) + (homeForm.avgConceded * 0.6);
+        }
+        if (awayForm) {
+            aS = (aAvgS * 0.4) + (awayForm.avgScored * 0.6);
+            aC = (aAvgC * 0.4) + (awayForm.avgConceded * 0.6);
+        }
+
+        // 3. STRENGTH ADJUSTMENT (Rank Gap Dominance)
+        let homeRankMod = 1.0, awayRankMod = 1.0;
+        if (homeStats && awayStats) {
+            const rankGap = awayStats.rank - homeStats.rank; // Higher rank = Lower number
+            if (rankGap > 8) homeRankMod = 1.15; // Home significantly stronger
+            if (rankGap < -8) awayRankMod = 1.15; // Away significantly stronger
+
+            // Extreme gap (e.g. 1st vs 20th)
+            if (rankGap > 15) homeRankMod = 1.25;
+            if (rankGap < -15) awayRankMod = 1.25;
+        }
+
+        // 4. PPG MOMENTUM BONUS
+        if (homeForm && awayForm) {
+            const ppgGap = homeForm.ppg - awayForm.ppg;
+            if (ppgGap > 0.8) homeRankMod *= 1.1; // Home on fire compared to away
+            if (ppgGap < -0.8) awayRankMod *= 1.1;
+        }
+
+        // Expected goals per team using attack/defense model + modifiers
+        const homeXG = ((hS + aC) / 2) * homeRankMod;
+        const awayXG = ((aS + hC) / 2) * awayRankMod;
         const totalXG = homeXG + awayXG;
 
-        // Poisson probabilities with Tail Correction (Reduces Under-bias)
-        const homeXGAdj = homeXG * 1.05; // Force slightly more goals
+        // Poisson probabilities with Tail Correction
+        const homeXGAdj = homeXG * 1.05;
         const awayXGAdj = awayXG * 1.05;
         const totalXGAdj = homeXGAdj + awayXGAdj;
 
@@ -860,7 +965,23 @@ class SportMonksService {
             return cached.markets;
         }
 
-        const result = this.calculateBestPrediction(fixtureId, home, away);
+        // Fetch fixture to get season_id and participant IDs
+        const fixture = await this.fetchSportMonks(`/fixtures/${fixtureId}`, { include: "participants" });
+        const seasonId = fixture?.data?.season_id;
+        const homeP = fixture?.data?.participants?.find((p: any) => p.meta.location === "home");
+        const awayP = fixture?.data?.participants?.find((p: any) => p.meta.location === "away");
+
+        // Fetch standings and form
+        const [allStats, homeForm, awayForm] = await Promise.all([
+            seasonId ? this.getTeamStats(seasonId) : Promise.resolve(new Map()),
+            homeP?.id ? this.getTeamForm(homeP.id) : Promise.resolve(undefined),
+            awayP?.id ? this.getTeamForm(awayP.id) : Promise.resolve(undefined)
+        ]);
+
+        const homeStats = homeP?.id ? allStats.get(homeP.id) : undefined;
+        const awayStats = awayP?.id ? allStats.get(awayP.id) : undefined;
+
+        const result = this.calculateBestPrediction(fixtureId, home, away, homeStats, awayStats, homeForm, awayForm);
         const candidates = result.candidates || [];
 
         const list: MarketAnalysis[] = candidates.map(c => {
