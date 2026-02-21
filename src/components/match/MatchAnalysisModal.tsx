@@ -51,6 +51,7 @@ export function MatchAnalysisModal({
     const [showBanner, setShowBanner] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
     const [oddsComparison, setOddsComparison] = useState<BestOdds[]>([]);
+    const [isPrime, setIsPrime] = useState(false);
 
     const router = useRouter();
     const { isLoaded, isSubscribed, trialActive, daysLeft, isTrialExpired } = useSubscription();
@@ -89,6 +90,7 @@ export function MatchAnalysisModal({
                 setMatchSummary(summaryData);
                 setModelSignals(signalsData);
                 setOddsComparison(oddsResp.all || []);
+                setIsPrime(!!oddsResp.suggestedBet?.isPrime);
                 setIsLoading(false);
             };
             fetchData();
@@ -306,15 +308,33 @@ export function MatchAnalysisModal({
                                             animate={isMobile ? { height: "auto" } : { height: "auto", opacity: 1, scaleY: 1 }}
                                             exit={{ height: 0, opacity: 0, scaleY: 0, y: -20 }}
                                             transition={{ duration: 0.4, ease: "easeInOut" }}
-                                            className="flex-shrink-0 px-6 md:px-12 py-3.5 md:py-5 bg-purple-500/10 border-y border-purple-500/20 flex flex-col md:flex-row items-center gap-4 md:gap-6 overflow-hidden origin-top"
+                                            className={cn(
+                                                "flex-shrink-0 px-6 md:px-12 py-3.5 md:py-5 border-y overflow-hidden origin-top flex flex-col md:flex-row items-center gap-4 md:gap-6",
+                                                isPrime
+                                                    ? "bg-amber-500/10 border-amber-500/20 shadow-[inset_0_0_20px_rgba(251,191,36,0.1)]"
+                                                    : "bg-purple-500/10 border-purple-500/20"
+                                            )}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)]">
+                                                <div className={cn(
+                                                    "w-10 h-10 rounded-xl flex items-center justify-center",
+                                                    isPrime
+                                                        ? "bg-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.4)]"
+                                                        : "bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+                                                )}>
                                                     <span className="text-white font-black text-lg">AI</span>
                                                 </div>
-                                                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Match Insight</h4>
+                                                <h4 className={cn(
+                                                    "text-xs font-black uppercase tracking-[0.2em]",
+                                                    isPrime ? "text-amber-400" : "text-white"
+                                                )}>
+                                                    {isPrime ? "Prime Value Insight" : "Match Insight"}
+                                                </h4>
                                             </div>
-                                            <p className="text-sm font-medium text-white/80 leading-relaxed italic">
+                                            <p className={cn(
+                                                "text-sm font-medium leading-relaxed italic",
+                                                isPrime ? "text-amber-100/90" : "text-white/80"
+                                            )}>
                                                 "{matchSummary?.summaryText}"
                                             </p>
                                         </motion.div>

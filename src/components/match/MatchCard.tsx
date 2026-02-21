@@ -40,6 +40,7 @@ export function MatchCard({
     const [bestBookmaker, setBestBookmaker] = useState<{ odds: number; name: string } | null>(null);
     const [dynamicPrediction, setDynamicPrediction] = useState(prediction);
     const [dynamicConfidence, setDynamicConfidence] = useState(confidence);
+    const [isPrime, setIsPrime] = useState(false);
 
     // Fetch odds lazily on mount
     useEffect(() => {
@@ -59,6 +60,7 @@ export function MatchCard({
                     if (data.suggestedBet) {
                         setDynamicPrediction(data.suggestedBet.outcome);
                         setDynamicConfidence(data.suggestedBet.confidence);
+                        setIsPrime(!!data.suggestedBet.isPrime);
                         setBet365Odds(data.suggestedBet.bet365 || data.suggestedBet.odds || null);
 
                         // Handle best bookmaker for the NEW prediction
@@ -156,11 +158,31 @@ export function MatchCard({
 
                     <div className="space-y-4">
                         <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wider gap-4">
-                            <span className="text-white/40 font-black tracking-[0.2em] text-[10px] whitespace-nowrap">Best Bet</span>
+                            <div className="flex flex-col gap-1">
+                                <span className={cn(
+                                    "font-black tracking-[0.2em] text-[10px] whitespace-nowrap",
+                                    isPrime ? "text-amber-400" : "text-white/40"
+                                )}>
+                                    {isPrime ? "PRIME VALUE BET" : "SAFE PICK"}
+                                </span>
+                                {isPrime && (
+                                    <div className="h-[2px] w-8 bg-amber-400/50 rounded-full animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+                                )}
+                            </div>
                             <div className="flex items-center gap-2 text-right">
-                                <span className="text-purple-400 font-bold uppercase tracking-widest text-[10px] line-clamp-1">{dynamicPrediction}</span>
+                                <span className={cn(
+                                    "font-bold uppercase tracking-widest text-[10px] line-clamp-1",
+                                    isPrime ? "text-white" : "text-purple-400"
+                                )}>
+                                    {dynamicPrediction}
+                                </span>
                                 {bet365Odds && (
-                                    <span className="text-emerald-400 font-black text-[11px] bg-emerald-400/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                    <span className={cn(
+                                        "font-black text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap",
+                                        isPrime
+                                            ? "bg-amber-400/20 text-amber-400 border border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.3)]"
+                                            : "bg-emerald-400/10 text-emerald-400"
+                                    )}>
                                         @ {bet365Odds.toFixed(2)}
                                     </span>
                                 )}
@@ -171,13 +193,18 @@ export function MatchCard({
                             <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${dynamicConfidence}%` }}
-                                className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full"
+                                className={cn(
+                                    "absolute inset-y-0 left-0 rounded-full",
+                                    isPrime
+                                        ? "bg-gradient-to-r from-amber-500 to-yellow-300 shadow-[0_0_10px_rgba(251,191,36,0.4)]"
+                                        : "bg-gradient-to-r from-purple-600 to-indigo-600"
+                                )}
                             />
                         </div>
 
-                        <div className="flex items-center justify-between text-[10px] font-black tracking-[0.2em] text-white/40 uppercase">
-                            <span>CONFIDENCE</span>
-                            <span className="text-white/60">{dynamicConfidence}%</span>
+                        <div className="flex items-center justify-between text-[10px] font-black tracking-[0.2em] uppercase">
+                            <span className={isPrime ? "text-amber-400/60" : "text-white/40"}>AI CONFIDENCE</span>
+                            <span className={isPrime ? "text-amber-400" : "text-white/60"}>{dynamicConfidence}%</span>
                         </div>
 
                         {bestBookmaker && bestBookmaker.odds > (bet365Odds || 0) && (

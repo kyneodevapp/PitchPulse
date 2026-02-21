@@ -54,6 +54,7 @@ export interface PredictionCandidate {
 export interface PredictionResult {
     outcome: string;
     confidence: number;
+    isPrime?: boolean;
     candidates?: PredictionCandidate[];
 }
 
@@ -1064,19 +1065,37 @@ class SportMonksService {
         awayTeam: string = ""
     ): Promise<PredictionResult & { odds?: number; bet365?: number | null; best?: BestOdds | null; all?: BestOdds[] }> {
         const allOdds = await this.fetchFixtureOdds(fixtureId);
+
         if (allOdds.length === 0 || candidates.length === 0) {
             // Fallback to highest probability if no odds
-            candidates.sort((a, b) => b.probability - a.probability);
-            return { outcome: candidates[0].outcome, confidence: Math.round(candidates[0].probability) };
+            const sortedCandidates = [...candidates].sort((a, b) => b.probability - a.probability);
+            return {
+                outcome: sortedCandidates[0].outcome,
+                confidence: Math.round(sortedCandidates[0].probability),
+                isPrime: false
+            };
         }
 
-        // VALUE-DRIVEN SYNC:
-        // We fetch the full analysis grid using live odds to determine the #1 rank.
+        // PRIME BET SEARCH: Probability > 60% and Odds > 1.8
+        let bestPrimeBet: { analysis: MarketAnalysis, odds: any[], score: number } | null = null;
         const analyses = await this.getMarketAnalyses(fixtureId, homeTeam, awayTeam, allOdds);
-        const topBet = analyses[0];
 
-        // Find odds for the top bet
-        const matchOdds = this.filterOdds(allOdds, topBet.prediction, homeTeam, awayTeam);
+        for (const analysis of analyses) {
+            const matchOdds = this.filterOdds(allOdds, analysis.prediction, homeTeam, awayTeam);
+            const maxOdds = matchOdds.length > 0 ? Math.max(...matchOdds.map(o => o.odds_value)) : 0;
+
+            if (analysis.probability >= 60 && maxOdds >= 1.8) {
+                const score = (analysis.probability / 100) * maxOdds;
+                if (!bestPrimeBet || score > bestPrimeBet.score) {
+                    bestPrimeBet = { analysis, odds: matchOdds, score };
+                }
+            }
+        }
+
+        const topBet = bestPrimeBet ? bestPrimeBet.analysis : analyses[0];
+        const isPrime = !!bestPrimeBet;
+        const matchOdds = bestPrimeBet ? bestPrimeBet.odds : this.filterOdds(allOdds, topBet.prediction, homeTeam, awayTeam);
+
         const b365 = matchOdds.find(o => o.bookmaker_id === 2);
         const bestAvailable = matchOdds.length > 0 ? Math.max(...matchOdds.map(o => o.odds_value)) : 0;
         const odds = b365 ? b365.odds_value : bestAvailable;
@@ -1090,6 +1109,7 @@ class SportMonksService {
         return {
             outcome: topBet.prediction,
             confidence: topBet.probability,
+            isPrime,
             odds,
             bet365: b365?.odds_value || null,
             best: normalized[0] || null,
