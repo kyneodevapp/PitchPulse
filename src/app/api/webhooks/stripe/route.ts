@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe_client";
 import { createClerkClient } from "@clerk/nextjs/server";
 
-const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+    const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
     const body = await req.text();
     const signature = (await headers()).get("Stripe-Signature") as string;
 

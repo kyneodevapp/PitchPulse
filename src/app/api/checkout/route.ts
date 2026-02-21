@@ -2,6 +2,8 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe_client";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
     const { userId } = await auth();
     const user = await currentUser();
