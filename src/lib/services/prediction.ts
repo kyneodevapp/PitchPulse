@@ -37,6 +37,9 @@ export interface MarketAnalysis {
     confidenceLevel: "Low" | "Medium" | "High";
     contextualStat?: string;
     microDetail?: string;
+    odds?: number;
+    starRating?: number;
+    kellyStake?: number;
 }
 
 export interface ModelSignal {
@@ -49,12 +52,17 @@ export interface ModelSignal {
 export interface PredictionCandidate {
     outcome: string;
     probability: number;
+    odds?: number;
+    starRating?: number;
+    kellyStake?: number;
 }
 
 export interface PredictionResult {
     outcome: string;
     confidence: number;
     isPrime?: boolean;
+    starRating?: number;
+    kellyStake?: number;
     candidates?: PredictionCandidate[];
 }
 
@@ -81,7 +89,7 @@ class SeededRandom {
     }
 }
 
-const PREDICTION_CACHE_KEY = "pitchpulse_prediction_cache_v5";
+const PREDICTION_CACHE_KEY = "pitchpulse_prediction_cache_v6";
 
 class PredictionStore {
     private static getCache(): Record<number, any> {
@@ -818,9 +826,9 @@ class SportMonksService {
         const awayXG = ((aS + hC) / 2) * awayRankMod;
         const totalXG = homeXG + awayXG;
 
-        // Poisson probabilities with Tail Correction
-        const homeXGAdj = homeXG * 1.05;
-        const awayXGAdj = awayXG * 1.05;
+        // Poisson probabilities - RAW (Unbiased)
+        const homeXGAdj = homeXG;
+        const awayXGAdj = awayXG;
         const totalXGAdj = homeXGAdj + awayXGAdj;
 
         const pHomeScores = 1 - Math.exp(-homeXGAdj);
@@ -833,12 +841,11 @@ class SportMonksService {
         const pTotal4 = (totalXGAdj ** 4 / 24) * Math.exp(-totalXGAdj);
         const pTotal5Plus = 1 - (pTotal0 + pTotal1 + pTotal2 + pTotal3 + pTotal4);
 
-        // Under 3.5 must account for the possibility of 4+ goals more realistically
-        // We add a 5% "Volatility Buffer" to under-markets
-        const pUnder35 = (pTotal0 + pTotal1 + pTotal2 + pTotal3) * 0.92;
+        // Standard Probabilities
+        const pUnder35 = (pTotal0 + pTotal1 + pTotal2 + pTotal3);
         const pOver15 = 1 - pTotal0 - pTotal1;
         const pOver25 = 1 - pTotal0 - pTotal1 - pTotal2;
-        const pBTTS = pHomeScores * pAwayScores * 1.05; // Modern football has higher BTTS freq
+        const pBTTS = pHomeScores * pAwayScores;
         const pMulti24 = pTotal2 + pTotal3 + pTotal4;
 
         // Home/Away win probabilities
@@ -861,8 +868,8 @@ class SportMonksService {
             { outcome: "Over 2.5 Goals", probability: pOver25 * 100 },
             // 6. BTTS
             { outcome: "Both Teams To Score", probability: pBTTS * 100 },
-            // 7. Total Goals/BTTS
-            { outcome: "BTTS & Over 2.5", probability: pBTTS * pOver25 * 100 * 1.15 },
+            // 7. Total Goals/BTTS (Stacked - 1.2x Correlation)
+            { outcome: "BTTS & Over 2.5", probability: Math.min(95, pBTTS * pOver25 * 100 * 1.2) },
             // 8. Team Total Goals
             { outcome: home + " Over 1.5", probability: (1 - Math.exp(-homeXG) - homeXG * Math.exp(-homeXG)) * 100 },
             // 9. 1st Half Goals
@@ -873,12 +880,16 @@ class SportMonksService {
             { outcome: homeAdvantage > 0.5 ? "2-1 Scoreline" : "1-1 Scoreline", probability: Math.max(12, 18 - Math.abs(homeAdvantage) * 5) },
             // 12. First Team To Score
             { outcome: homeXG > awayXG ? home : away, probability: (homeXG / (homeXG + awayXG)) * 100 },
-            // 13. Result/BTTS
-            { outcome: home + " & BTTS", probability: pHomeWin * pBTTS * 100 * 1.10 },
+            // 13. Result/BTTS (Stacked - 1.2x Correlation)
+            { outcome: home + " & BTTS", probability: Math.min(95, pHomeWin * pBTTS * 100 * 1.2) },
             // 14. Half Time Result
             { outcome: "Draw at HT", probability: (0.40 + (1 / (totalXG + 1)) * 0.20) * 100 },
             // 15. HT/FT
-            { outcome: homeAdvantage > 0.3 ? "Home/Home" : "Draw/Home", probability: Math.max(15, pHomeWin * 0.6 * 100) }
+            { outcome: homeAdvantage > 0.3 ? "Home/Home" : "Draw/Home", probability: Math.max(15, pHomeWin * 0.6 * 100) },
+            // 16. Double Chance & Under (Stability - Option 3)
+            { outcome: home + " or Draw & Under 4.5", probability: Math.min(98, (pHomeWin + pDraw) * (1 - pTotal5Plus) * 100 * 1.1) },
+            // 17. Result & Over 1.5 (Value - Option 3 - 1.2x Correlation)
+            { outcome: home + " Win & Over 1.5", probability: Math.min(95, pHomeWin * pOver15 * 100 * 1.2) }
         ];
 
         // Also add some extra common ones for variety
@@ -981,7 +992,7 @@ class SportMonksService {
         const homeStats = homeP?.id ? allStats.get(homeP.id) : undefined;
         const awayStats = awayP?.id ? allStats.get(awayP.id) : undefined;
 
-        const result = this.calculateBestPrediction(fixtureId, home, away, homeStats, awayStats, homeForm, awayForm);
+        const result: PredictionResult = this.calculateBestPrediction(fixtureId, home, away, homeStats, awayStats, homeForm, awayForm);
         const candidates = result.candidates || [];
 
         const list: MarketAnalysis[] = candidates.map(c => {
@@ -1000,36 +1011,39 @@ class SportMonksService {
             };
         });
 
-        // SORT: Value-Driven Synchronization (Favors impactful markets with good odds)
+        // SORT: Value-Driven Synchronization (Favors Edge & Probability)
         const allOdds = providedOdds || [];
-        list.sort((a, b) => {
-            const getWeight = (outcome: string) => {
-                const o = outcome.toLowerCase();
-                if (o.includes("win") || o.includes("btts") || o.includes("over 2.5")) return 1.35; // Value bonus
-                if (o.includes("over 1.5") || o.includes("double chance")) return 1.1;
-                if (o.includes("under")) return 0.8; // Penalize safe/boring markets
-                return 1.0;
+
+        const listWithStats = list.map(m => {
+            const matchOdds = this.filterOdds(allOdds, m.prediction, home, away);
+            const odds = matchOdds.length > 0 ? Math.max(...matchOdds.map((o: any) => o.odds_value)) : 1.5; // Default modest odds if none
+
+            const kelly = this.calculateKelly(m.probability, odds);
+
+            return {
+                ...m,
+                odds,
+                starRating: kelly.stars,
+                kellyStake: kelly.stake,
+                contextualStat: kelly.rating,
+                microDetail: `Edge Analysis: ${kelly.stars}/10 Rating • Suggested Stake: ${kelly.stake}%`
             };
+        });
 
-            // If we have odds, use Probability * Odds * Utility
-            if (allOdds.length > 0) {
-                const oddsA = this.filterOdds(allOdds, a.prediction, home, away);
-                const oddsB = this.filterOdds(allOdds, b.prediction, home, away);
-                const valA = (oddsA[0]?.odds_value || 1.1) * a.probability * getWeight(a.prediction);
-                const valB = (oddsB[0]?.odds_value || 1.1) * b.probability * getWeight(b.prediction);
-                return valB - valA;
-            }
-
-            // Fallback to Impact-Adjusted Probability
-            const scoreA = a.probability * getWeight(a.prediction);
-            const scoreB = b.probability * getWeight(b.prediction);
-            return scoreB - scoreA;
+        // Final sorting based on Value Score (Kelly * Prob)
+        listWithStats.sort((a, b) => {
+            // Priority 1: Star Rating (Value Edge)
+            if (b.starRating !== a.starRating) return b.starRating! - a.starRating!;
+            // Priority 2: Raw Probability
+            return b.probability - a.probability;
         });
 
         const sortedResult = result;
-        // Deterministically set main prediction to the #1 ranked item in analysis grid
-        sortedResult.outcome = list[0].prediction;
-        sortedResult.confidence = list[0].probability;
+        // The #1 ranked item now represents the best balance of safety and value
+        sortedResult.outcome = listWithStats[0].prediction;
+        sortedResult.confidence = listWithStats[0].probability;
+        sortedResult.starRating = listWithStats[0].starRating;
+        sortedResult.kellyStake = listWithStats[0].kellyStake;
 
         // Update cache
         const summary = await this.getMatchSummary(fixtureId);
@@ -1038,12 +1052,40 @@ class SportMonksService {
         PredictionStore.save(fixtureId, {
             summary,
             signals,
-            markets: list,
+            markets: listWithStats,
             mainPrediction: sortedResult,
             generatedAt: new Date().toISOString()
         });
 
-        return list;
+        return listWithStats;
+    }
+
+    private calculateKelly(prob: number, odds: number): { stake: number, stars: number, rating: string } {
+        const p = prob / 100;
+        const q = 1 - p;
+        const b = odds - 1;
+
+        // Handle zero or negative odds (protect against bad API data)
+        if (b <= 0) return { stake: 0, stars: 1, rating: "Avoid" };
+
+        const edge = (p * b - q) / b;
+
+        // Fractional Kelly (25% for extreme safety)
+        const stake = Math.max(0, edge * 0.25 * 100);
+
+        // Star Rating (1-10)
+        // Scaled broadly: 0% edge = 1 star, 15% edge = 10 stars (Elite value)
+        let stars = Math.min(10, Math.max(1, Math.round((edge * 100) / 1.5) + 1));
+
+        // Boost stars if probability is very high (>85%) - Safety bonus
+        if (p > 0.85) stars = Math.min(10, stars + 2);
+
+        let rating = "Low Value / Avoid";
+        if (stars >= 8) rating = "Elite Value";
+        else if (stars >= 5) rating = "Solid Selection";
+        else if (stars >= 3) rating = "Speculative";
+
+        return { stake: Number(stake.toFixed(1)), stars, rating };
     }
 
     private getMarketNameForOutcome(outcome: string): string {
@@ -1205,16 +1247,17 @@ class SportMonksService {
             };
         }
 
-        // PRIME BET SEARCH: Probability > 60% and Odds > 1.8
+        // PRIME BET SEARCH: Favoring Value Edge (Star Rating >= 7) and Odds >= 1.5
         let bestPrimeBet: { analysis: MarketAnalysis, odds: any[], score: number } | null = null;
         const analyses = await this.getMarketAnalyses(fixtureId, homeTeam, awayTeam, allOdds);
 
         for (const analysis of analyses) {
             const matchOdds = this.filterOdds(allOdds, analysis.prediction, homeTeam, awayTeam);
-            const maxOdds = matchOdds.length > 0 ? Math.max(...matchOdds.map(o => o.odds_value)) : 0;
+            const maxOdds = matchOdds.length > 0 ? Math.max(...matchOdds.map((o: any) => o.odds_value)) : 0;
 
-            if (analysis.probability >= 60 && maxOdds >= 1.8) {
-                const score = (analysis.probability / 100) * maxOdds;
+            // A pick is "Prime" if it has clear Value (Stars >= 7) and acceptable odds
+            if (analysis.starRating && analysis.starRating >= 7 && maxOdds >= 1.5) {
+                const score = (analysis.starRating * 10) + analysis.probability; // Favor Stars first
                 if (!bestPrimeBet || score > bestPrimeBet.score) {
                     bestPrimeBet = { analysis, odds: matchOdds, score };
                 }
@@ -1243,7 +1286,9 @@ class SportMonksService {
             bet365: b365?.odds_value || null,
             best: normalized[0] || null,
             all: normalized,
-            candidates
+            candidates,
+            starRating: topBet.starRating,
+            kellyStake: topBet.kellyStake
         };
     }
 }

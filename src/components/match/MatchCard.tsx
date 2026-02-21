@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, Clock, Info, ShieldAlert } from "lucide-react";
+import { TrendingUp, Clock, Info, ShieldAlert, Star, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { MatchAnalysisModal } from "./MatchAnalysisModal";
@@ -41,6 +41,8 @@ export function MatchCard({
     const [dynamicPrediction, setDynamicPrediction] = useState(prediction);
     const [dynamicConfidence, setDynamicConfidence] = useState(confidence);
     const [isPrime, setIsPrime] = useState(false);
+    const [starRating, setStarRating] = useState<number>(0);
+    const [kellyStake, setKellyStake] = useState<number>(0);
 
     // Fetch odds lazily on mount
     useEffect(() => {
@@ -62,6 +64,8 @@ export function MatchCard({
                         setDynamicConfidence(data.suggestedBet.confidence);
                         setIsPrime(!!data.suggestedBet.isPrime);
                         setBet365Odds(data.suggestedBet.bet365 || data.suggestedBet.odds || null);
+                        setStarRating(data.suggestedBet.starRating || 0);
+                        setKellyStake(data.suggestedBet.kellyStake || 0);
 
                         // Handle best bookmaker for the NEW prediction
                         if (data.suggestedBet.best && data.suggestedBet.best.bookmaker !== "bet365") {
@@ -159,20 +163,33 @@ export function MatchCard({
                     <div className="space-y-4">
                         <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wider gap-4">
                             <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                    {[...Array(10)].map((_, i) => (
+                                        <Star
+                                            key={i}
+                                            className={cn(
+                                                "w-1.5 h-1.5",
+                                                i < starRating
+                                                    ? (isPrime ? "text-amber-400 fill-amber-400" : "text-purple-400 fill-purple-400")
+                                                    : "text-white/10 fill-transparent"
+                                            )}
+                                        />
+                                    ))}
+                                </div>
                                 <span className={cn(
                                     "font-black tracking-[0.2em] text-[10px] whitespace-nowrap",
-                                    isPrime ? "text-amber-400" : "text-white/40"
+                                    (starRating < 4 && dynamicConfidence < 60) ? "text-red-400" : (isPrime ? "text-amber-400" : "text-white/40")
                                 )}>
-                                    {isPrime ? "PRIME VALUE BET" : "SAFE PICK"}
+                                    {(starRating < 4 && dynamicConfidence < 60) ? "LOW VALUE / AVOID" : (isPrime ? "PRIME VALUE BET" : "SAFE PICK")}
                                 </span>
-                                {isPrime && (
+                                {isPrime && starRating >= 4 && (
                                     <div className="h-[2px] w-8 bg-amber-400/50 rounded-full animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
                                 )}
                             </div>
                             <div className="flex items-center gap-2 text-right">
                                 <span className={cn(
                                     "font-bold uppercase tracking-widest text-[10px] line-clamp-1",
-                                    isPrime ? "text-white" : "text-purple-400"
+                                    (starRating < 4 && dynamicConfidence < 60) ? "text-white/30" : (isPrime ? "text-white" : "text-purple-400")
                                 )}>
                                     {dynamicPrediction}
                                 </span>
@@ -188,31 +205,40 @@ export function MatchCard({
                                 )}
                             </div>
                         </div>
-
-                        <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${dynamicConfidence}%` }}
-                                className={cn(
-                                    "absolute inset-y-0 left-0 rounded-full",
-                                    isPrime
-                                        ? "bg-gradient-to-r from-amber-500 to-yellow-300 shadow-[0_0_10px_rgba(251,191,36,0.4)]"
-                                        : "bg-gradient-to-r from-purple-600 to-indigo-600"
-                                )}
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between text-[10px] font-black tracking-[0.2em] uppercase">
-                            <span className={isPrime ? "text-amber-400/60" : "text-white/40"}>AI CONFIDENCE</span>
-                            <span className={isPrime ? "text-amber-400" : "text-white/60"}>{dynamicConfidence}%</span>
-                        </div>
-
-                        {bestBookmaker && bestBookmaker.odds > (bet365Odds || 0) && (
-                            <div className="text-[9px] font-bold text-amber-400/70 text-right tracking-wider">
-                                Best: {bestBookmaker.odds.toFixed(2)} @ {bestBookmaker.name}
-                            </div>
-                        )}
                     </div>
+
+                    <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${dynamicConfidence}%` }}
+                            className={cn(
+                                "absolute inset-y-0 left-0 rounded-full",
+                                isPrime
+                                    ? "bg-gradient-to-r from-amber-500 to-yellow-300 shadow-[0_0_10px_rgba(251,191,36,0.4)]"
+                                    : "bg-gradient-to-r from-purple-600 to-indigo-600"
+                            )}
+                        />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] font-black tracking-[0.2em] uppercase">
+                        <span className={isPrime ? "text-amber-400/60" : "text-white/40"}>AI CONFIDENCE</span>
+                        <span className={isPrime ? "text-amber-400" : "text-white/60"}>{dynamicConfidence}%</span>
+                    </div>
+
+                    {bestBookmaker && bestBookmaker.odds > (bet365Odds || 0) && (
+                        <div className="text-[9px] font-bold text-amber-400/70 text-right tracking-wider">
+                            Best: {bestBookmaker.odds.toFixed(2)} @ {bestBookmaker.name}
+                        </div>
+                    )}
+
+                    {(starRating < 4 && dynamicConfidence < 60) && starRating > 0 && (
+                        <div className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl mt-2">
+                            <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                            <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">
+                                Trap Game: Avoid Standalone Bet
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 <div
