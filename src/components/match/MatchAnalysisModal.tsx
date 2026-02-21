@@ -311,9 +311,12 @@ export function MatchAnalysisModal({
                                             <span className="text-white font-black text-lg">AI</span>
                                         </div>
                                         <h4 className={cn(
-                                            "text-xs font-black uppercase tracking-[0.2em]",
+                                            "text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2",
                                             isPrime ? "text-amber-400" : "text-white"
                                         )}>
+                                            {isPrime && (
+                                                <span className="px-1 py-0.5 rounded-sm bg-amber-400/10 border border-amber-400/20 text-[8px] tracking-[0.1em] opacity-80">ORACLE</span>
+                                            )}
                                             {isPrime ? "Prime Value Insight" : "Match Insight"}
                                         </h4>
                                     </div>

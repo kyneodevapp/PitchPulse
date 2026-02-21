@@ -177,13 +177,16 @@ export function MatchCard({
                                     ))}
                                 </div>
                                 <span className={cn(
-                                    "font-black tracking-[0.2em] text-[10px] whitespace-nowrap",
+                                    "font-black tracking-[0.2em] text-[10px] whitespace-nowrap flex items-center gap-1.5",
                                     (starRating < 4 && dynamicConfidence < 60) ? "text-red-400" : (isPrime ? "text-amber-400" : "text-white/40")
                                 )}>
+                                    {isPrime && starRating >= 4 && (
+                                        <span className="px-1 py-0.5 rounded-sm bg-amber-400/10 border border-amber-400/20 text-[8px] tracking-[0.1em] opacity-80">ORACLE</span>
+                                    )}
                                     {(starRating < 4 && dynamicConfidence < 60) ? "LOW VALUE / AVOID" : (isPrime ? "PRIME VALUE BET" : "SAFE PICK")}
                                 </span>
                                 {isPrime && starRating >= 4 && (
-                                    <div className="h-[2px] w-8 bg-amber-400/50 rounded-full animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+                                    <div className="h-[2px] w-12 bg-gradient-to-r from-amber-400/0 via-amber-400/60 to-amber-400/0 rounded-full animate-pulse shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
                                 )}
                             </div>
                             <div className="flex items-center gap-2 text-right">
