@@ -31,7 +31,7 @@ export default async function Home() {
         <div className="flex flex-col">
             <Hero />
 
-            <section className="container mx-auto px-4 py-16">
+            <section id="featured-games" className="container mx-auto px-4 py-16">
                 <div className="flex items-center justify-between mb-12">
                     <div>
                         <h2 className="text-3xl font-bold text-white mb-2">Dashboard Overview</h2>

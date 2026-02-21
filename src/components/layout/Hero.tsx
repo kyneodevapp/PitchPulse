@@ -28,7 +28,10 @@ export function Hero() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <button className="w-full sm:w-auto px-10 py-4 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:scale-105 transition-all text-lg font-bold shadow-xl shadow-purple-500/25 text-white">
+                            <button
+                                onClick={() => document.getElementById('featured-games')?.scrollIntoView({ behavior: 'smooth' })}
+                                className="w-full sm:w-auto px-10 py-4 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:scale-105 transition-all text-lg font-bold shadow-xl shadow-purple-500/25 text-white"
+                            >
                                 Start Expert Predictions
                             </button>
                         </div>
