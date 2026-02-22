@@ -27,7 +27,9 @@ export default async function Home() {
             time: new Date(f.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             date: f.date,
             isLive: f.is_live,
+            isLocked: f.is_locked,
         }));
+
 
     return (
         <div className="flex flex-col bg-[#0B0F14]">

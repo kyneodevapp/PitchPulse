@@ -114,7 +114,9 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                                                         time={new Date(m.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         date={m.date}
                                                         isLive={m.is_live}
+                                                        isLocked={m.is_locked}
                                                     />
+
                                                 ))}
                                             </div>
                                         </div>

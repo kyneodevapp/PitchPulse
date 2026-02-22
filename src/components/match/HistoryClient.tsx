@@ -5,6 +5,8 @@ import { PastMatch } from "@/lib/services/prediction";
 import { ResultCard } from "./ResultCard";
 import { CommandBar } from "./CommandBar";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+
 
 interface HistoryClientProps {
     initialMatches: PastMatch[];

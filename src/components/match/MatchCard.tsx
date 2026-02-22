@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, Clock, Info, ShieldAlert, Star, AlertCircle } from "lucide-react";
+import { TrendingUp, Clock, Info, ShieldAlert, Star, AlertCircle, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { MatchAnalysisModal } from "./MatchAnalysisModal";
@@ -18,7 +18,9 @@ interface MatchCardProps {
     time: string;
     date: string;
     isLive?: boolean;
+    isLocked?: boolean;
 }
+
 
 export function MatchCard({
     id,
@@ -32,6 +34,7 @@ export function MatchCard({
     time,
     date,
     isLive,
+    isLocked,
 }: MatchCardProps) {
     const [homeError, setHomeError] = useState(false);
     const [awayError, setAwayError] = useState(false);
@@ -60,6 +63,16 @@ export function MatchCard({
                 if (resp.ok) {
                     const data = await resp.json();
 
+                    // If isLocked is true, we ONLY care about the odds.
+                    // We strictly DO NOT want to override the prediction outcome or confidence.
+                    if (isLocked) {
+                        if (data.bet365) setBet365Odds(data.bet365);
+                        if (data.best && data.best.bookmaker !== "bet365") {
+                            setBestBookmaker({ odds: data.best.odds, name: data.best.bookmaker });
+                        }
+                        return;
+                    }
+
                     // If we have a value-optimized suggestBet, use IT for everything
                     if (data.suggestedBet) {
                         setDynamicPrediction(data.suggestedBet.outcome);
@@ -80,7 +93,29 @@ export function MatchCard({
                         } else {
                             setBestBookmaker(null);
                         }
+
+                        // IMPORTANT: Save this upgraded prediction to persistence so History uses IT
+                        // Only save if it wasn't already locked with this outcome
+                        if (!isLocked) {
+                            import("@/lib/services/prediction").then(({ PredictionStore }) => {
+                                PredictionStore.save(id, {
+                                    mainPrediction: {
+                                        outcome: data.suggestedBet.outcome,
+                                        confidence: data.suggestedBet.confidence,
+                                        isPrime: !!data.suggestedBet.isPrime,
+                                        isElite: !!data.suggestedBet.isElite,
+                                        starRating: data.suggestedBet.starRating,
+                                        kellyStake: data.suggestedBet.kellyStake,
+                                        candidates: data.suggestedBet.candidates
+                                    },
+                                    summary: "Value-optimized automated prediction",
+                                    markets: data.markets,
+                                    signals: data.signals
+                                });
+                            });
+                        }
                     } else {
+
                         // Fallback to original prediction odds
                         if (data.bet365) setBet365Odds(data.bet365);
                         if (data.best && data.best.bookmaker !== "bet365") {
@@ -93,7 +128,8 @@ export function MatchCard({
             }
         };
         fetchOdds();
-    }, [id, prediction, homeTeam, awayTeam]);
+    }, [id, prediction, homeTeam, awayTeam, isLocked]);
+
 
     return (
         <>
@@ -107,22 +143,32 @@ export function MatchCard({
                 <div className="p-4 sm:p-5 lg:p-6 flex-1 flex flex-col">
                     {/* Header: Status & Time */}
                     <div className="flex items-center justify-between mb-6">
-                        <div className={cn(
-                            "flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest",
-                            isLive ? "bg-red-500 text-white" : "bg-neutral-800 text-neutral-300"
-                        )}>
-                            {isLive ? (
-                                <>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                                    Live
-                                </>
-                            ) : (
-                                <>
-                                    <Clock className="w-3 h-3 sm:w-4 h-4" />
-                                    {date} • {time}
-                                </>
+                        <div className="flex items-center gap-2">
+                            <div className={cn(
+                                "flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest",
+                                isLive ? "bg-red-500 text-white" : "bg-neutral-800 text-neutral-300"
+                            )}>
+                                {isLive ? (
+                                    <>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                        Live
+                                    </>
+                                ) : (
+                                    <>
+                                        <Clock className="w-3 h-3 sm:w-4 h-4" />
+                                        {date} • {time}
+                                    </>
+                                )}
+                            </div>
+
+                            {isLocked && (
+                                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[9px] font-bold uppercase tracking-widest shadow-sm">
+                                    <Lock className="w-2.5 h-2.5" />
+                                    Locked
+                                </div>
                             )}
                         </div>
+
                         <div className="text-neutral-500 group-hover/card:text-neutral-300 transition-colors">
                             <Info className="w-4 h-4" />
                         </div>

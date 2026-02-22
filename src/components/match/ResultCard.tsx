@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, X as XIcon, Clock, ShieldAlert } from "lucide-react";
+import { Check, X as XIcon, Clock, ShieldAlert, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { PastMatch } from "@/lib/services/prediction";
@@ -24,10 +24,19 @@ export function ResultCard({ match, leagueName }: ResultCardProps) {
             <div className="p-5 flex-1">
                 {/* Status + Hit/Miss Badge */}
                 <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#0B0F14] text-neutral-400 border border-[#1F2937] text-[10px] font-bold uppercase tracking-widest tabular-nums">
-                        <Clock className="w-3 h-3" />
-                        {match.date}
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#0B0F14] text-neutral-400 border border-[#1F2937] text-[10px] font-bold uppercase tracking-widest tabular-nums">
+                            <Clock className="w-3 h-3" />
+                            {match.date}
+                        </div>
+                        {match.is_locked && (
+                            <div className="flex items-center gap-1 px-2 py-1 rounded bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[9px] font-bold uppercase tracking-widest shadow-sm">
+                                <Lock className="w-2.5 h-2.5" />
+                                Locked
+                            </div>
+                        )}
                     </div>
+
                     <div className={cn(
                         "flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest",
                         match.prediction_hit
