@@ -1,33 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-    --color-background: hsl(240 10% 3.9%);
-    --color-foreground: hsl(0 0% 98%);
+    --color-background: #0B0F14;
+    --color-foreground: #FFFFFF;
 
-    --color-card: hsl(240 10% 3.9%);
-    --color-card-foreground: hsl(0 0% 98%);
+    --color-card: #111827;
+    --color-card-foreground: #D1D5DB;
 
-    --color-popover: hsl(240 10% 3.9%);
-    --color-popover-foreground: hsl(0 0% 98%);
+    --color-popover: #111827;
+    --color-popover-foreground: #D1D5DB;
 
-    --color-primary: hsl(263.4 70% 50.4%);
-    --color-primary-foreground: hsl(210 40% 98%);
+    --color-primary: #FBBF24;
+    --color-primary-foreground: #0B0F14;
 
-    --color-secondary: hsl(240 3.7% 15.9%);
-    --color-secondary-foreground: hsl(0 0% 98%);
+    --color-secondary: #1F2937;
+    --color-secondary-foreground: #FFFFFF;
 
-    --color-muted: hsl(240 3.7% 15.9%);
-    --color-muted-foreground: hsl(240 5% 64.9%);
+    --color-muted: #1F2937;
+    --color-muted-foreground: #9CA3AF;
 
-    --color-accent: hsl(240 3.7% 15.9%);
-    --color-accent-foreground: hsl(0 0% 98%);
+    --color-accent: #1F2937;
+    --color-accent-foreground: #FFFFFF;
 
-    --color-destructive: hsl(0 62.8% 30.6%);
-    --color-destructive-foreground: hsl(0 0% 98%);
+    --color-destructive: #ef4444;
+    --color-destructive-foreground: #FFFFFF;
 
-    --color-border: hsl(240 3.7% 15.9%);
-    --color-input: hsl(240 3.7% 15.9%);
-    --color-ring: hsl(240 4.9% 83.9%);
+    --color-border: #1F2937;
+    --color-input: #1F2937;
+    --color-ring: #FBBF24;
 
     --radius-lg: 0.75rem;
     --radius-md: calc(var(--radius-lg) - 2px);
@@ -51,26 +51,27 @@
         @apply border-border;
     }
 
+    html {
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground antialiased selection:bg-primary/20;
     }
 }
 
-.glass {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
+.glass,
 .glass-dark {
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background-color: #111827;
+    border: 1px solid #1F2937;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 .text-gradient {
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    background-image: linear-gradient(to bottom right, white, rgba(255, 255, 255, 0.5));
+    color: #FFFFFF;
+    background: none;
+    -webkit-background-clip: unset;
 }

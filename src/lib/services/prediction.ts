@@ -95,7 +95,7 @@ class SeededRandom {
 
 const PREDICTION_CACHE_KEY = "pitchpulse_prediction_cache_v6";
 
-class PredictionStore {
+export class PredictionStore {
     private static getCache(): Record<number, any> {
         if (typeof window === "undefined") return {};
         const saved = localStorage.getItem(PREDICTION_CACHE_KEY);
@@ -107,17 +107,75 @@ class PredictionStore {
         localStorage.setItem(PREDICTION_CACHE_KEY, JSON.stringify(cache));
     }
 
-    static get(fixtureId: number) {
-        return this.getCache()[fixtureId] || null;
+    static async get(fixtureId: number) {
+        const local = this.getCache()[fixtureId];
+        if (local) return local;
+
+        // Try Supabase if not in local storage
+        try {
+            const { createClient } = await import("@supabase/supabase-js");
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (supabaseUrl && supabaseKey) {
+                const supabase = createClient(supabaseUrl, supabaseKey);
+                const { data, error } = await supabase
+                    .from("predictions_cache")
+                    .select("*")
+                    .eq("fixture_id", fixtureId)
+                    .single();
+
+                if (data && !error) {
+                    return {
+                        summary: data.summary,
+                        signals: data.signals,
+                        markets: data.markets,
+                        mainPrediction: data.main_prediction,
+                        generatedAt: data.generated_at
+                    };
+                }
+            }
+        } catch (e) {
+            console.error("Supabase Prediction Retrieval Error:", e);
+        }
+        return null;
     }
 
-    static save(fixtureId: number, data: any) {
+    static async save(fixtureId: number, data: any) {
         const cache = this.getCache();
+        const timestamp = new Date().toISOString();
         cache[fixtureId] = {
             ...data,
-            generatedAt: new Date().toISOString()
+            generatedAt: timestamp
         };
         this.setCache(cache);
+
+        // Save to Supabase for persistence across sessions/history
+        try {
+            const { createClient } = await import("@supabase/supabase-js");
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (supabaseUrl && supabaseKey) {
+                const supabase = createClient(supabaseUrl, supabaseKey);
+                const main = data.mainPrediction || {};
+                await supabase.from("predictions_cache").upsert({
+                    fixture_id: fixtureId,
+                    outcome: main.outcome || "TBA",
+                    confidence: main.confidence || 0,
+                    candidates: main.candidates,
+                    summary: data.summary,
+                    signals: data.signals,
+                    markets: data.markets,
+                    main_prediction: main,
+                    is_prime: main.isPrime,
+                    is_elite: main.isElite,
+                    star_rating: main.starRating,
+                    kelly_stake: main.kellyStake,
+                    generated_at: timestamp
+                });
+            }
+        } catch (e) {
+            // Fails silently
+        }
     }
 }
 
@@ -622,7 +680,7 @@ class SportMonksService {
                 awayP?.id ? this.getTeamForm(awayP.id) : Promise.resolve(undefined)
             ]);
 
-            const cached = PredictionStore.get(f.id);
+            const cached = await PredictionStore.get(f.id);
             const bestBet = cached?.mainPrediction || this.calculateBestPrediction(
                 f.id, home, away, homeStats, awayStats, homeForm, awayForm
             );
@@ -685,7 +743,8 @@ class SportMonksService {
                 const homeScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "home")?.score?.goals ?? 0;
                 const awayScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "away")?.score?.goals ?? 0;
 
-                const bestBet = this.calculateBestPrediction(f.id, home, away, homeStats, awayStats, homeForm, awayForm);
+                const cached = await PredictionStore.get(f.id);
+                const bestBet = cached?.mainPrediction || this.calculateBestPrediction(f.id, home, away, homeStats, awayStats, homeForm, awayForm);
                 const hit = this.evaluatePrediction(bestBet.outcome, homeScore, awayScore, home, away);
 
                 return {
@@ -928,7 +987,7 @@ class SportMonksService {
     }
 
     async getMatchSummary(fixtureId: number): Promise<MatchSummary> {
-        const cached = PredictionStore.get(fixtureId);
+        const cached = await PredictionStore.get(fixtureId);
         if (cached?.summary) return cached.summary;
 
         const rng = new SeededRandom(fixtureId);
@@ -952,7 +1011,7 @@ class SportMonksService {
     }
 
     async getModelSignals(fixtureId: number): Promise<ModelSignal[]> {
-        const cached = PredictionStore.get(fixtureId);
+        const cached = await PredictionStore.get(fixtureId);
         if (cached?.signals) return cached.signals;
 
         // Deterministic signals
@@ -986,7 +1045,7 @@ class SportMonksService {
     }
 
     async getMarketAnalyses(fixtureId: number, home: string = "Home", away: string = "Away", providedOdds: any[] | null = null): Promise<MarketAnalysis[]> {
-        const cached = PredictionStore.get(fixtureId);
+        const cached = await PredictionStore.get(fixtureId);
         // If we have cached markets that looks like our new format, return them
         if (cached?.markets && cached.markets.length > 5 && cached.markets[0].microDetail?.includes("calibrated") && !providedOdds) {
             return cached.markets;

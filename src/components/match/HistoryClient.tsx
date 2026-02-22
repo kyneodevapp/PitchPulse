@@ -73,36 +73,36 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
                 animate={{
                     paddingTop: isScrolled ? "8px" : "16px",
                     paddingBottom: isScrolled ? "8px" : "16px",
-                    backgroundColor: isScrolled ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0.4)"
+                    backgroundColor: isScrolled ? "#0B0F14" : "transparent"
                 }}
                 className={cn(
-                    "sticky top-[72px] z-30 -mx-4 px-4 backdrop-blur-3xl border-b border-white/5 transition-colors",
-                    isScrolled ? "space-y-2" : "space-y-4"
+                    "sticky top-[72px] z-30 -mx-4 px-4 border-b border-[#1F2937] transition-colors",
+                    isScrolled ? "shadow-2xl" : ""
                 )}
             >
                 {/* Stats Bar */}
-                <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide no-scrollbar pb-1" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-                    <div className="flex items-center gap-2 bg-white/5 border border-white/5 rounded-xl px-3 py-1.5 flex-shrink-0">
-                        <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Hit Rate</span>
+                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-3">
+                    <div className="flex items-center gap-2 bg-[#111827] border border-[#1F2937] rounded-lg px-3 py-1.5 flex-shrink-0">
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Hit Rate</span>
                         <span className={cn(
-                            "text-sm font-black",
+                            "text-sm font-bold tabular-nums",
                             hitRate >= 60 ? "text-emerald-400" : hitRate >= 40 ? "text-amber-400" : "text-rose-400"
                         )}>{hitRate}%</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-white/5 border border-white/5 rounded-xl px-3 py-1.5 flex-shrink-0">
-                        <TrendingUp className="w-3 h-3 text-emerald-400" />
-                        <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Hits</span>
-                        <span className="text-sm font-black text-emerald-400">{totalHits}</span>
+                    <div className="flex items-center gap-2 bg-[#111827] border border-[#1F2937] rounded-lg px-3 py-1.5 flex-shrink-0">
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Hits</span>
+                        <span className="text-sm font-bold text-emerald-400 tabular-nums">{totalHits}</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-white/5 border border-white/5 rounded-xl px-3 py-1.5 flex-shrink-0">
-                        <TrendingDown className="w-3 h-3 text-rose-400" />
-                        <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Misses</span>
-                        <span className="text-sm font-black text-rose-400">{totalMatches - totalHits}</span>
+                    <div className="flex items-center gap-2 bg-[#111827] border border-[#1F2937] rounded-lg px-3 py-1.5 flex-shrink-0">
+                        <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Misses</span>
+                        <span className="text-sm font-bold text-rose-400 tabular-nums">{totalMatches - totalHits}</span>
                     </div>
                 </div>
 
                 {/* Date Navigation */}
-                <div className="flex overflow-x-auto gap-2 pb-1 scrollbar-hide scroll-smooth no-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+                <div className="flex overflow-x-auto gap-3 pb-1 scroll-smooth no-scrollbar">
                     {sortedDates.map((dateStr) => {
                         const isActive = selectedDate === dateStr;
                         const [dayName, dayNum, month] = dateStr.split(' ');
@@ -113,47 +113,34 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
                                 key={dateStr}
                                 onClick={() => scrollToDate(dateStr)}
                                 className={cn(
-                                    "flex-shrink-0 flex flex-col items-center justify-center transition-all border overflow-hidden relative",
+                                    "flex-shrink-0 flex flex-col items-center justify-center transition-all border relative",
                                     isActive
-                                        ? "bg-purple-600 border-purple-500 text-white shadow-[0_0_30px_rgba(147,51,234,0.3)]"
-                                        : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white"
+                                        ? "bg-[#FBBF24] border-[#FBBF24] text-black font-bold"
+                                        : "bg-[#111827] border-[#1F2937] text-neutral-400 hover:text-white"
                                 )}
                                 style={{
-                                    width: isScrolled ? "44px" : "64px",
-                                    height: isScrolled ? "44px" : "80px",
-                                    borderRadius: isScrolled ? "10px" : "18px"
+                                    width: isScrolled ? "48px" : "64px",
+                                    height: isScrolled ? "48px" : "80px",
+                                    borderRadius: "12px"
                                 }}
                             >
                                 {!isScrolled && (
-                                    <motion.span
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="text-[9px] font-black uppercase tracking-widest mb-1"
-                                    >
+                                    <span className="text-[10px] font-bold uppercase tracking-widest mb-1 text-inherit">
                                         {dayName.substring(0, 3)}
-                                    </motion.span>
+                                    </span>
                                 )}
                                 <span className={cn(
-                                    "font-black tracking-tighter",
-                                    isScrolled ? "text-sm" : "text-lg"
+                                    "font-bold tabular-nums",
+                                    isScrolled ? "text-base" : "text-xl"
                                 )}>
                                     {dayNum}
                                 </span>
-                                {!isScrolled && (
-                                    <motion.span
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="text-[9px] font-bold uppercase opacity-60"
-                                    >
-                                        {month}
-                                    </motion.span>
-                                )}
                                 {/* Hit rate mini indicator */}
                                 {!isScrolled && (
                                     <div className={cn(
-                                        "absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full",
-                                        dayHits / dayTotal >= 0.6 ? "bg-emerald-400" : dayHits / dayTotal >= 0.4 ? "bg-amber-400" : "bg-rose-400"
-                                    )} />
+                                        "absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full",
+                                        dayHits / dayTotal >= 0.6 ? "bg-emerald-500" : dayHits / dayTotal >= 0.4 ? "bg-amber-500" : "bg-rose-500"
+                                    )} title={`${dayHits}/${dayTotal} Hits`} />
                                 )}
                             </button>
                         );
@@ -165,10 +152,10 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
             <AnimatePresence mode="wait">
                 <motion.div
                     key="history-results"
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-24 pt-8"
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-24"
                 >
                     {sortedDates.map((dateStr) => {
                         const dateMatches = groupedByDate[dateStr];
@@ -177,7 +164,7 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
                             <div
                                 key={dateStr}
                                 id={`history-date-${dateStr.replace(/\s+/g, '-')}`}
-                                className="scroll-mt-64 space-y-12"
+                                className="scroll-mt-64 space-y-8"
                             >
                                 {SUPPORTED_LEAGUES.map((league) => {
                                     const leagueMatches = dateMatches.filter(m => m.league_id === league.id);
@@ -186,24 +173,22 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
                                     const leagueHits = leagueMatches.filter(m => m.prediction_hit).length;
 
                                     return (
-                                        <div key={league.id} className="space-y-8">
-                                            <div className="flex items-center gap-4 px-2">
-                                                <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                                                    <Trophy className="w-4 h-4" />
+                                        <div key={league.id} className="space-y-6">
+                                            <div className="flex items-center gap-4">
+                                                <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em]">{league.name}</h4>
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#111827] border border-[#1F2937]">
+                                                    <span className={cn(
+                                                        "text-[10px] font-bold tabular-nums",
+                                                        leagueHits / leagueMatches.length >= 0.6 ? "text-emerald-400" : "text-amber-400"
+                                                    )}>
+                                                        {leagueHits}/{leagueMatches.length}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">HITS</span>
                                                 </div>
-                                                <h4 className="text-xs font-black text-white uppercase tracking-[0.2em]">{league.name}</h4>
-                                                <span className={cn(
-                                                    "text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
-                                                    leagueHits / leagueMatches.length >= 0.6
-                                                        ? "text-emerald-400 bg-emerald-400/10"
-                                                        : "text-amber-400 bg-amber-400/10"
-                                                )}>
-                                                    {leagueHits}/{leagueMatches.length} hits
-                                                </span>
-                                                <div className="flex-1 h-[1px] bg-white/5 ml-4" />
+                                                <div className="flex-1 h-[1px] bg-[#1F2937]" />
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                                 {leagueMatches
                                                     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
                                                     .map((m) => (
@@ -219,10 +204,10 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
                     })}
 
                     {initialMatches.length === 0 && (
-                        <div className="glass-dark rounded-[40px] p-24 text-center border border-white/5">
-                            <h3 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">No Results Found</h3>
-                            <p className="text-white/40 text-sm max-w-md mx-auto">
-                                We couldn&apos;t find any completed matches across our supported leagues for the last 3 days.
+                        <div className="bg-[#111827] rounded-xl p-24 text-center border border-[#1F2937]">
+                            <h3 className="text-2xl font-bold text-white mb-4 uppercase tracking-tighter">No Results Found</h3>
+                            <p className="text-neutral-500 text-sm max-w-md mx-auto">
+                                We couldn't find any completed matches across our supported leagues.
                             </p>
                         </div>
                     )}

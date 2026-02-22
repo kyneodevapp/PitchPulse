@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Shield -->
+  <rect x="20" y="5" width="60" height="90" rx="10" fill="#0A0A0A" stroke="#262626" stroke-width="2"/>
+  
+  <!-- Glow Effect (Static version for file) -->
+  <rect x="20" y="5" width="60" height="90" rx="10" fill="url(#glow-gradient)" opacity="0.4"/>
+
+  <!-- Pulse Wave Path -->
+  <path d="M25 60H35L40 45L50 80L60 20L65 60H75" stroke="url(#pulse-gradient)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Gradients -->
+  <defs>
+    <radialGradient id="glow-gradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#A855F7" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#A855F7" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pulse-gradient" x1="25" y1="50" x2="75" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A855F7" />
+      <stop offset="0.5" stop-color="#6366F1" />
+      <stop offset="1" stop-color="#A855F7" />
+    </linearGradient>
+  </defs>
+</svg>

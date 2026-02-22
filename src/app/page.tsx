@@ -10,10 +10,11 @@ export default async function Home() {
     // Fetch fixtures for the next 5 days
     const fixtures = await sportmonksService.getFixtures(5);
 
-    // Filter for "Featured" - Let's take the first 6 sorted by time
+    // Filter for "Featured" - Let's take the first 8 sorted by time
+    // XL grid allows 4 columns, so 8 is a good number
     const featuredMatches = [...fixtures]
         .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-        .slice(0, 6)
+        .slice(0, 8)
         .map((f: Match) => ({
             id: f.id,
             homeTeam: f.home_team,
@@ -29,57 +30,83 @@ export default async function Home() {
         }));
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col bg-[#0B0F14]">
             <Hero />
 
-            <section id="featured-games" className="container mx-auto px-4 py-16">
-                <div className="flex items-center justify-between mb-12">
+            <section id="featured-games" className="container mx-auto px-4 py-24">
+                <div className="flex items-end justify-between mb-12 border-b border-[#1F2937] pb-8">
                     <div>
-                        <h2 className="text-3xl font-bold text-white mb-2">Dashboard Overview</h2>
-                        <p className="text-white/40">Real-time AI insights for the most impactful matchups</p>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.3em]">Market Coverage</span>
+                        </div>
+                        <h2 className="text-4xl font-bold text-white mb-2 tracking-tighter">Dashboard Overview</h2>
+                        <p className="text-neutral-400 font-medium">Real-time AI insights for the most impactful matchups</p>
                     </div>
                     <Link
                         href="/games/today"
-                        className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2 group"
+                        className="px-6 py-3 rounded-lg bg-[#111827] border border-[#1F2937] text-xs font-bold text-white uppercase tracking-widest hover:bg-[#1F2937] transition-all flex items-center gap-3 group"
                     >
-                        View All Games
-                        <span className="group-hover:translate-x-1 transition-transform">→</span>
+                        View Full Terminal
+                        <span className="group-hover:translate-x-1 transition-transform text-[#FBBF24]">→</span>
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {featuredMatches.map((match: any, i: number) => (
                         <MatchCard key={i} {...match} />
                     ))}
                 </div>
             </section>
 
-            <section className="bg-white/[0.02] border-y border-white/5 py-24">
+            <section className="bg-[#111827] border-y border-[#1F2937] py-32">
                 <div className="container mx-auto px-4 text-center">
-                    <div className="max-w-2xl mx-auto">
-                        <h2 className="text-4xl font-bold text-white mb-6">Ready to beat the bookies?</h2>
-                        <p className="text-white/60 mb-10 text-lg">
-                            Join 10,000+ winners who use PitchPulse to gain a professional edge.
-                            Get started for free or upgrade to Pro for surgical precision.
+                    <div className="max-w-3xl mx-auto">
+                        <span className="inline-block px-4 py-1 mb-8 text-[10px] font-bold tracking-[0.2em] text-[#FBBF24] uppercase border border-[#FBBF24]/30 rounded-lg">
+                            Premium Access
+                        </span>
+                        <h2 className="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tighter">Ready to dominate?</h2>
+                        <p className="text-neutral-400 mb-12 text-lg md:text-xl leading-relaxed font-medium">
+                            Join 10,000+ elite analysts who use PitchPulse to gain a surgical edge.
+                            Get started for free or upgrade to Pro for institutional-grade precision.
                         </p>
-                        <button className="px-10 py-5 rounded-full bg-white text-black font-bold hover:bg-white/90 transition-all scale-100 hover:scale-105">
+                        <button className="px-12 py-5 rounded-xl bg-[#FBBF24] text-black font-bold text-lg hover:bg-white transition-all uppercase tracking-widest shadow-2xl">
                             Unlock Pro Predictions
                         </button>
                     </div>
                 </div>
             </section>
 
-            <footer className="container mx-auto px-4 py-12 border-t border-white/5 mt-auto">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-3">
-                        <BrandLogo size="sm" showText={true} />
-                        <span className="text-[10px] font-bold opacity-20 uppercase tracking-[0.2em] ml-2">© 2026</span>
+            <footer className="container mx-auto px-4 py-16 mt-auto">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-12 pt-12 border-t border-[#1F2937]">
+                    <div className="flex flex-col items-center md:items-start gap-4">
+                        <BrandLogo size="md" showText={true} />
+                        <p className="text-neutral-600 text-[10px] font-bold uppercase tracking-[0.2em] max-w-xs text-center md:text-left">
+                            Institutional Grade Football Analytics. Neural Network Driven Predictions.
+                        </p>
                     </div>
-                    <div className="flex items-center gap-8 text-xs font-medium text-white/30 uppercase tracking-widest">
-                        <a href="#" className="hover:text-white transition-colors">Terms</a>
-                        <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                        <a href="#" className="hover:text-white transition-colors">Contact</a>
+                    <div className="flex flex-wrap justify-center gap-12">
+                        <div className="flex flex-col gap-4">
+                            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Platform</span>
+                            <div className="flex flex-col gap-2 text-xs font-bold text-white/40 uppercase tracking-widest">
+                                <a href="/games/today" className="hover:text-[#FBBF24] transition-colors">Markets</a>
+                                <a href="/history" className="hover:text-[#FBBF24] transition-colors">Terminal</a>
+                                <a href="#" className="hover:text-[#FBBF24] transition-colors">API</a>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Legal</span>
+                            <div className="flex flex-col gap-2 text-xs font-bold text-white/40 uppercase tracking-widest">
+                                <a href="#" className="hover:text-[#FBBF24] transition-colors">Terms</a>
+                                <a href="#" className="hover:text-[#FBBF24] transition-colors">Privacy</a>
+                                <a href="#" className="hover:text-[#FBBF24] transition-colors">Risk</a>
+                            </div>
+                        </div>
                     </div>
+                </div>
+                <div className="mt-16 pt-8 border-t border-[#1F2937]/50 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <span className="text-[9px] font-bold text-neutral-700 uppercase tracking-[0.3em]">© 2026 PitchPulse Technologies LLC</span>
+                    <span className="text-[9px] font-bold text-neutral-700 uppercase tracking-[0.3em]">All Rights Reserved</span>
                 </div>
             </footer>
         </div>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sportmonksService } from "@/lib/services/prediction";
+import { sportmonksService, PredictionStore } from "@/lib/services/prediction";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -14,6 +14,9 @@ export async function GET(request: Request) {
 
     try {
         if (prediction) {
+            const cached = await PredictionStore.get(fixtureId);
+            const main = cached?.mainPrediction;
+
             const rawOdds = await sportmonksService.getOddsForPrediction(
                 fixtureId, prediction, homeTeam, awayTeam
             );
@@ -21,10 +24,17 @@ export async function GET(request: Request) {
             // Calculate Value Bet if we have team names
             let valueBet = null;
             if (homeTeam && awayTeam) {
-                // We pass undefined for Stats/Form as calculateValueBet -> getMarketAnalyses will fetch them accurately
-                const result = sportmonksService.calculateBestPrediction(fixtureId, homeTeam, awayTeam);
-                if (result.candidates) {
-                    valueBet = await sportmonksService.calculateValueBet(fixtureId, result.candidates, homeTeam, awayTeam);
+                // If we have a cached result, use its candidates to ensure consistency
+                const candidates = main?.candidates || sportmonksService.calculateBestPrediction(fixtureId, homeTeam, awayTeam).candidates;
+
+                if (candidates) {
+                    valueBet = await sportmonksService.calculateValueBet(fixtureId, candidates, homeTeam, awayTeam);
+
+                    // If we have a cached main prediction, ensure the suggestedBet outcomes match if possible
+                    // or at least prioritize the cached outcome if it's a high-confidence one.
+                    if (main && !valueBet.isElite) {
+                        // Optional: further logic to stick to 'main.outcome' if it's still valid
+                    }
                 }
             }
 

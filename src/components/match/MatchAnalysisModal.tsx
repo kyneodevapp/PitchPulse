@@ -196,15 +196,16 @@ export function MatchAnalysisModal({
 
                         {/* Modal Content */}
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 40 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 40 }}
-                            className="relative w-full max-w-6xl h-[calc(100vh-1rem)] md:h-auto md:max-h-[95vh] glass-dark border border-white/10 md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col overscroll-none"
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 16 }}
+                            transition={{ duration: 0.3 }}
+                            className="relative w-full max-w-6xl h-[calc(100vh-1rem)] md:h-auto md:max-h-[95vh] bg-[#0B0F14] border border-[#1F2937] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col overscroll-none"
                         >
                             {/* Close Button */}
                             <button
                                 onClick={onClose}
-                                className="absolute top-4 right-4 md:top-8 md:right-8 p-2 md:p-3 rounded-xl md:rounded-2xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 z-[60]"
+                                className="absolute top-4 right-4 md:top-8 md:right-8 p-2 md:p-3 rounded-lg bg-[#111827] hover:bg-[#1F2937] text-white transition-all border border-[#1F2937] z-[60]"
                             >
                                 <X className="w-4 h-4 md:w-5 md:h-5" />
                             </button>
@@ -215,208 +216,135 @@ export function MatchAnalysisModal({
                                 onScroll={handleScroll}
                                 className="flex-1 overflow-y-auto min-h-0 overscroll-contain custom-scrollbar relative"
                             >
-                                {/* Header Section (Natural flow on Desktop, Animated on Mobile) */}
-                                <div className="border-b border-white/5">
+                                {/* Header Section */}
+                                <div className="border-b border-[#1F2937]">
                                     <motion.div
-                                        style={isMobile ? {
-                                            opacity: mobileHeaderOpacity,
-                                            scale: mobileHeaderScale
-                                        } : {}}
+                                        style={isMobile ? { opacity: mobileHeaderOpacity } : {}}
                                         className="overflow-hidden"
                                     >
-                                        <div className="p-4 pt-12 md:p-12">
-                                            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 md:gap-12">
+                                        <div className="p-6 pt-16 md:p-12">
+                                            <div className="flex flex-col lg:flex-row items-center justify-between gap-8 md:gap-12">
                                                 {/* Team logos & Info */}
-                                                <div className="flex-1 flex items-center justify-center gap-6 md:gap-16">
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <div className="w-12 h-12 md:w-32 md:h-32 bg-white/5 rounded-2xl md:rounded-3xl p-2 md:p-4 border border-white/10 shadow-2xl relative group focus-within:ring-2 focus-within:ring-purple-500/50">
-                                                            <div className="absolute inset-0 bg-purple-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <div className="flex-1 flex items-center justify-center gap-8 md:gap-16">
+                                                    <div className="flex flex-col items-center gap-4">
+                                                        <div className="w-16 h-16 md:w-32 md:h-32 bg-[#111827] rounded-xl p-3 md:p-6 border border-[#1F2937] shadow-xl relative">
                                                             <img src={homeLogo} alt={homeTeam} className="w-full h-full object-contain relative" />
                                                         </div>
-                                                        <h2 className="text-sm md:text-2xl font-black text-white uppercase tracking-tight text-center max-w-[120px] md:max-w-none truncate">{homeTeam}</h2>
+                                                        <h2 className="text-lg md:text-2xl font-bold text-white tracking-tight text-center max-w-[140px] md:max-w-none line-clamp-2">
+                                                            {homeTeam}
+                                                        </h2>
                                                     </div>
 
                                                     <div className="flex flex-col items-center gap-2">
-                                                        <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/5 border border-white/10 text-[9px] md:text-[10px] font-black text-white/40 tracking-[0.2em] uppercase">
+                                                        <div className="px-3 py-1 md:px-4 md:py-1.5 rounded-lg bg-[#1F2937] border border-[#374151] text-[10px] md:text-xs font-bold text-neutral-400 tracking-widest uppercase">
                                                             VS
                                                         </div>
-                                                        <div className="h-8 md:h-12 w-[1px] bg-gradient-to-b from-white/5 via-white/20 to-white/5" />
+                                                        <div className="h-10 md:h-16 w-[2px] bg-[#1F2937]" />
                                                     </div>
 
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <div className="w-12 h-12 md:w-32 md:h-32 bg-white/5 rounded-2xl md:rounded-3xl p-2 md:p-4 border border-white/10 shadow-2xl relative group focus-within:ring-2 focus-within:ring-purple-500/50">
-                                                            <div className="absolute inset-0 bg-purple-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <div className="flex flex-col items-center gap-4">
+                                                        <div className="w-16 h-16 md:w-32 md:h-32 bg-[#111827] rounded-xl p-3 md:p-6 border border-[#1F2937] shadow-xl relative">
                                                             <img src={awayLogo} alt={awayTeam} className="w-full h-full object-contain relative" />
                                                         </div>
-                                                        <h2 className="text-sm md:text-2xl font-black text-white uppercase tracking-tight text-center max-w-[120px] md:max-w-none truncate">{awayTeam}</h2>
+                                                        <h2 className="text-lg md:text-2xl font-bold text-white tracking-tight text-center max-w-[140px] md:max-w-none line-clamp-2">
+                                                            {awayTeam}
+                                                        </h2>
                                                     </div>
                                                 </div>
 
-                                                {/* AI Confidence Meter */}
+                                                {/* Confidence Indicator */}
                                                 <div className="flex flex-col items-center lg:items-end">
-                                                    <div className="relative w-20 h-20 md:w-40 md:h-40 flex items-center justify-center">
-                                                        <svg className="w-full h-full transform -rotate-90">
-                                                            <circle
-                                                                cx="50%"
-                                                                cy="50%"
-                                                                r="45%"
-                                                                className="stroke-white/5 fill-none"
-                                                                strokeWidth="8"
-                                                            />
-                                                            <motion.circle
-                                                                cx="50%"
-                                                                cy="50%"
-                                                                r="45%"
-                                                                className="stroke-purple-500 fill-none"
-                                                                strokeWidth="8"
-                                                                strokeLinecap="round"
-                                                                initial={{ pathLength: 0 }}
-                                                                animate={{ pathLength: (matchSummary?.overallConfidence || 0) / 100 }}
-                                                                transition={{ duration: 1.5, ease: "easeOut" }}
-                                                            />
-                                                        </svg>
-                                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                            <span className="text-2xl md:text-4xl font-black text-white tracking-tighter">
+                                                    <div className="relative w-24 h-24 md:w-44 md:h-44 flex items-center justify-center bg-[#111827] rounded-xl border border-[#1F2937] p-6">
+                                                        <div className="flex flex-col items-center">
+                                                            <span className="text-xs font-bold text-[#FBBF24] uppercase tracking-widest mb-1">
+                                                                Confidence
+                                                            </span>
+                                                            <span className="text-3xl md:text-5xl font-bold text-white tracking-tighter tabular-nums">
                                                                 {matchSummary?.overallConfidence}%
                                                             </span>
-                                                            <span className="text-[8px] md:text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Confidence</span>
                                                         </div>
-                                                        <div className="absolute inset-0 bg-purple-500/20 blur-3xl -z-10 rounded-full" />
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Match Meta Info */}
-                                            <div className="mt-4 md:mt-12 flex items-center justify-center text-[9px] md:text-[11px] font-bold uppercase tracking-widest text-white/40">
-                                                <div className="flex items-center gap-1.5 md:gap-2 bg-white/5 px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl border border-white/5">
-                                                    <span className="text-purple-400">KICKOFF:</span> {date} • {time}
+                                            <div className="mt-8 flex items-center justify-center text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                                                <div className="flex items-center gap-2 bg-[#111827] px-4 py-2 rounded-lg border border-[#1F2937]">
+                                                    <span className="text-[#FBBF24]">KICKOFF:</span>
+                                                    <span className="text-white">{date} • {time}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </motion.div>
                                 </div>
 
+                                {/* Summary Insight Badge */}
                                 <motion.div
                                     initial={false}
                                     style={isMobile ? { opacity: mobileHeaderOpacity } : {}}
                                     className={cn(
-                                        "flex-shrink-0 px-6 md:px-12 py-3.5 md:py-5 border-y overflow-hidden flex flex-col md:flex-row items-center gap-4 md:gap-6 sticky top-0 md:relative z-40 transition-colors duration-300",
-                                        isPrime
-                                            ? "bg-amber-500/10 border-amber-500/20 shadow-[inset_0_0_20px_rgba(251,191,36,0.1)]"
-                                            : "bg-purple-500/10 border-purple-500/20"
+                                        "flex-shrink-0 px-6 md:px-12 py-4 md:py-6 border-y flex flex-col md:flex-row items-center gap-6 sticky top-0 md:relative z-40 bg-[#111827]",
+                                        isPrime ? "border-amber-400/30" : "border-[#1F2937]"
                                     )}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className={cn(
-                                            "w-10 h-10 rounded-xl flex items-center justify-center",
-                                            isPrime
-                                                ? "bg-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.4)]"
-                                                : "bg-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+                                            "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-black",
+                                            isPrime ? "bg-[#FBBF24]" : "bg-white"
                                         )}>
-                                            <span className="text-white font-black text-lg">AI</span>
+                                            AI
                                         </div>
                                         <h4 className={cn(
-                                            "text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2",
-                                            isPrime ? "text-amber-400" : "text-white"
+                                            "text-xs font-bold uppercase tracking-widest",
+                                            isPrime ? "text-[#FBBF24]" : "text-white"
                                         )}>
-                                            {isPrime && (
-                                                <span className="px-1 py-0.5 rounded-sm bg-amber-400/10 border border-amber-400/20 text-[8px] tracking-[0.1em] opacity-80">ORACLE</span>
-                                            )}
-                                            {isPrime ? "Prime Value Insight" : "Match Insight"}
+                                            {isPrime ? "Oracle Insight" : "Match Insight"}
                                         </h4>
                                     </div>
-                                    <p className={cn(
-                                        "text-sm font-medium leading-relaxed italic",
-                                        isPrime ? "text-amber-100/90" : "text-white/80"
-                                    )}>
+                                    <p className="text-sm md:text-base font-medium text-[#D1D5DB] leading-relaxed italic">
                                         "{matchSummary?.summaryText}"
                                     </p>
                                 </motion.div>
 
-                                {/* Institutional Elite Signal */}
-                                {isElite && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="mx-6 md:mx-12 mt-6 p-6 rounded-3xl bg-cyan-950/30 border border-cyan-400/20 relative overflow-hidden group"
-                                    >
-                                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                            <TrendingUp className="w-16 h-16 text-cyan-400" />
-                                        </div>
-                                        <div className="flex flex-col gap-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                                                <h3 className="text-sm font-black text-cyan-400 uppercase tracking-[0.3em]">Elite Quantitative Signal</h3>
-                                            </div>
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] font-black text-white/30 uppercase tracking-widest block">Model Prob</span>
-                                                    <span className="text-2xl font-black text-white">{matchSummary?.overallConfidence}%</span>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] font-black text-white/30 uppercase tracking-widest block">Implied Prob</span>
-                                                    <span className="text-2xl font-black text-white">{oddsComparison[0] ? ((1 / oddsComparison[0].odds) * 100).toFixed(0) : "44"}%</span>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] font-black text-white/30 uppercase tracking-widest block">Expected Value</span>
-                                                    <span className="text-2xl font-black text-emerald-400">+{(expectedValue * 100).toFixed(1)}%</span>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] font-black text-white/30 uppercase tracking-widest block">Risk Profile</span>
-                                                    <span className="text-2xl font-black text-cyan-400">Elite</span>
-                                                </div>
-                                            </div>
-                                            <div className="p-4 bg-cyan-900/20 border border-cyan-400/10 rounded-2xl">
-                                                <p className="text-[11px] font-medium text-cyan-100/70 leading-relaxed italic">
-                                                    "Institutional analysis confirms high-probability mispricing. The expected value (+{(expectedValue * 100).toFixed(1)}%) signifies a substantial long-term ROI edge over market aggregates."
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-
                                 {/* Main Content Wrapper */}
-                                <div className="p-6 md:p-12">
+                                <div className="p-6 md:p-12 space-y-16">
                                     {isLoading ? (
-                                        <div className="flex flex-col items-center justify-center py-24 gap-4">
-                                            <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
-                                            <div className="flex flex-col items-center gap-1">
-                                                <span className="text-xs font-black uppercase tracking-[0.3em] text-white/20 text-center px-4">Crunching thousands of data points...</span>
-                                                {trialActive && !isSubscribed && (
-                                                    <span className="text-[10px] font-bold text-purple-400/40 uppercase tracking-widest">Trial Active: {daysLeft} days remaining</span>
-                                                )}
-                                            </div>
+                                        <div className="flex flex-col items-center justify-center py-24 gap-6">
+                                            <Loader2 className="w-10 h-10 text-[#FBBF24] animate-spin" />
+                                            <span className="text-xs font-bold uppercase tracking-[0.3em] text-[#9CA3AF]">
+                                                Crunching Model Data...
+                                            </span>
                                         </div>
                                     ) : isTrialExpired ? (
                                         <Paywall onUpgrade={() => router.push("/api/checkout")} />
                                     ) : (
-                                        <div className="space-y-16">
+                                        <>
                                             <MarketGrid markets={markets} />
 
-                                            {/* Model Signals Section */}
+                                            {/* Model Signals Table/Grid */}
                                             <div className="space-y-8">
                                                 <div className="flex items-center gap-4">
-                                                    <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">Model Signals</h3>
-                                                    <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                                                    <h3 className="text-xs font-bold text-white uppercase tracking-[0.3em]">Model Signals</h3>
+                                                    <div className="h-[1px] flex-1 bg-[#1F2937]" />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                                     {modelSignals.map((signal, idx) => (
-                                                        <div key={idx} className="bg-white/[0.03] border border-white/5 rounded-3xl p-6 hover:bg-white/[0.05] transition-all group">
+                                                        <div key={idx} className="bg-[#111827] border border-[#1F2937] rounded-xl p-6 hover:bg-[#1C2533] transition-colors group">
                                                             <div className="flex items-center justify-between mb-4">
-                                                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{signal.name}</span>
+                                                                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">{signal.name}</span>
                                                                 <span className={cn(
-                                                                    "text-[9px] font-black px-2 py-0.5 rounded-full uppercase",
+                                                                    "text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase",
                                                                     signal.rating === "High" || signal.rating === "Elite" ? "text-emerald-400 bg-emerald-400/10" :
-                                                                        signal.rating === "Medium" ? "text-amber-400 bg-amber-400/10" : "text-rose-400 bg-rose-400/10"
+                                                                        signal.rating === "Medium" ? "text-[#FBBF24] bg-amber-400/10" : "text-rose-400 bg-red-400/10"
                                                                 )}>
                                                                     {signal.rating}
                                                                 </span>
                                                             </div>
                                                             <div className="flex items-end gap-3 mb-4">
-                                                                <span className="text-3xl font-black text-white">{signal.value}</span>
-                                                                <span className="text-xs font-bold text-white/20 mb-1">SCORE</span>
+                                                                <span className="text-3xl font-bold text-white tabular-nums">{signal.value}</span>
+                                                                <span className="text-[10px] font-bold text-neutral-600 mb-1">SCORE</span>
                                                             </div>
-                                                            <p className="text-[10px] font-medium text-white/40 leading-relaxed">
+                                                            <p className="text-xs font-medium text-neutral-400 leading-relaxed">
                                                                 {signal.explanation}
                                                             </p>
                                                         </div>
@@ -424,41 +352,32 @@ export function MatchAnalysisModal({
                                                 </div>
                                             </div>
 
-                                            {/* Best Odds Comparison — UK Bookmakers */}
+                                            {/* Odds Comparison */}
                                             {oddsComparison.length > 0 && (
                                                 <div className="space-y-8">
                                                     <div className="flex items-center gap-4">
-                                                        <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">UK Bookmaker Odds</h3>
-                                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                                                        <h3 className="text-xs font-bold text-white uppercase tracking-[0.3em]">Bookmaker Comparison</h3>
+                                                        <div className="h-[1px] flex-1 bg-[#1F2937]" />
                                                     </div>
-                                                    {prediction && (
-                                                        <p className="text-[10px] font-bold text-purple-400/60 uppercase tracking-[0.15em]">
-                                                            Odds for: {prediction}
-                                                        </p>
-                                                    )}
-                                                    <div className="bg-white/[0.03] border border-white/5 rounded-3xl overflow-hidden">
-                                                        <div className="grid grid-cols-[1fr_auto] gap-4 px-6 py-3 border-b border-white/5">
-                                                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Bookmaker</span>
-                                                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] text-right">Odds</span>
+                                                    <div className="bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden">
+                                                        <div className="grid grid-cols-[1fr_auto] gap-4 px-6 py-3 bg-[#0B0F14] border-b border-[#1F2937]">
+                                                            <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">Bookmaker</span>
+                                                            <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right">Decimal Odds</span>
                                                         </div>
                                                         {oddsComparison.map((odd, idx) => {
-                                                            const isBet365 = odd.bookmaker === "bet365";
                                                             const isBest = idx === 0;
                                                             return (
                                                                 <div key={idx} className={cn(
-                                                                    "grid grid-cols-[1fr_auto] gap-4 px-6 py-4 items-center transition-colors hover:bg-white/[0.03]",
-                                                                    isBest ? "bg-emerald-500/5" : "",
-                                                                    isBet365 && !isBest ? "bg-amber-500/5" : "",
-                                                                    idx < oddsComparison.length - 1 ? "border-b border-white/5" : ""
+                                                                    "grid grid-cols-[1fr_auto] gap-4 px-6 py-4 items-center transition-colors hover:bg-[#1C2533]",
+                                                                    idx < oddsComparison.length - 1 ? "border-b border-[#1F2937]" : ""
                                                                 )}>
                                                                     <div className="flex items-center gap-2">
-                                                                        {isBest && <span className="text-[9px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">BEST</span>}
-                                                                        {isBet365 && !isBest && <span className="text-[9px] font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">★</span>}
-                                                                        <span className={cn("text-xs font-bold", isBest ? "text-white" : isBet365 ? "text-amber-200" : "text-white/60")}>{odd.bookmaker}</span>
+                                                                        {isBest && <span className="text-[9px] font-bold text-emerald-400 border border-emerald-400/30 px-2 py-0.5 rounded-sm">BEST VALUE</span>}
+                                                                        <span className={cn("text-xs font-bold", isBest ? "text-white" : "text-[#D1D5DB]")}>{odd.bookmaker}</span>
                                                                     </div>
                                                                     <span className={cn(
-                                                                        "text-sm font-black text-right tabular-nums",
-                                                                        isBest ? "text-emerald-400" : isBet365 ? "text-amber-400" : "text-white/60"
+                                                                        "text-sm font-bold text-right tabular-nums",
+                                                                        isBest ? "text-emerald-400" : "text-white"
                                                                     )}>{odd.odds.toFixed(2)}</span>
                                                                 </div>
                                                             );
@@ -468,22 +387,22 @@ export function MatchAnalysisModal({
                                             )}
 
                                             {/* AI Disclaimer */}
-                                            <div className="p-8 rounded-3xl bg-purple-500/5 border border-purple-500/10 text-center mb-12">
-                                                <p className="text-[10px] font-bold text-purple-400/60 uppercase tracking-[0.2em] leading-relaxed max-w-2xl mx-auto">
-                                                    PitchPulse AI analyzes historical form, player availability, tactical setups, and market sentiment to deliver high-precision probability outcomes.
+                                            <div className="p-8 rounded-xl bg-[#111827] border border-[#1F2937] text-center mb-12">
+                                                <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] leading-relaxed max-w-2xl mx-auto">
+                                                    PitchPulse AI utilizes Bloomberg-grade quantitative modeling to analyze tactical setups and market mispricing. Projections are based on historical edge benchmarks.
                                                 </p>
                                             </div>
 
-                                            {/* Mobile Footer (Inside flow) */}
+                                            {/* Mobile Footer */}
                                             {isMobile && (
                                                 <motion.div
                                                     style={{ opacity: footerOpacity }}
-                                                    className="mt-12 pt-12 border-t border-white/5"
+                                                    className="mt-12 pt-12 border-t border-[#1F2937]"
                                                 >
                                                     {renderFooterContent()}
                                                 </motion.div>
                                             )}
-                                        </div>
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -496,8 +415,8 @@ export function MatchAnalysisModal({
                                             initial={{ height: 0, opacity: 0, y: 40 }}
                                             animate={{ height: "auto", opacity: 1, y: 0 }}
                                             exit={{ height: 0, opacity: 0, y: 40 }}
-                                            transition={{ duration: 0.35, ease: "easeInOut" }}
-                                            className="p-8 border-t border-white/5 bg-white/[0.04] backdrop-blur-xl z-[50] overflow-hidden"
+                                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                                            className="p-8 border-t border-[#1F2937] bg-[#111827] z-[50] overflow-hidden"
                                         >
                                             {renderFooterContent()}
                                         </motion.div>

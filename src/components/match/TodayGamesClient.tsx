@@ -5,7 +5,7 @@ import { Match } from "@/lib/services/prediction";
 import { MatchCard } from "./MatchCard";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Calendar as CalendarIcon, ChevronRight, ChevronLeft } from "lucide-react";
+import { Trophy, Clock } from "lucide-react";
 
 interface TodayGamesClientProps {
     initialMatches: Match[];
@@ -72,19 +72,18 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                 animate={{
                     paddingTop: isScrolled ? "8px" : "16px",
                     paddingBottom: isScrolled ? "8px" : "16px",
-                    backgroundColor: isScrolled ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0.4)"
+                    backgroundColor: isScrolled ? "#0B0F14" : "transparent"
                 }}
                 className={cn(
-                    "sticky top-[72px] z-30 -mx-4 px-4 backdrop-blur-3xl border-b border-white/5 transition-colors",
-                    isScrolled ? "space-y-2" : "space-y-4"
+                    "sticky top-[72px] z-30 -mx-4 px-4 border-b border-[#1F2937] transition-colors",
+                    isScrolled ? "shadow-2xl" : ""
                 )}
             >
                 {/* 1. Date Navigation (Calendar) */}
-                <div className="relative">
+                <div className="relative mb-4">
                     <div
                         ref={scrollContainerRef}
-                        className="flex overflow-x-auto gap-2 pb-1 scrollbar-hide scroll-smooth no-scrollbar"
-                        style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+                        className="flex overflow-x-auto gap-3 pb-1 scroll-smooth no-scrollbar"
                     >
                         {sortedDates.map((dateStr) => {
                             const isActive = selectedDate === dateStr;
@@ -94,41 +93,28 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                                     key={dateStr}
                                     onClick={() => scrollToDate(dateStr)}
                                     className={cn(
-                                        "flex-shrink-0 flex flex-col items-center justify-center transition-all border overflow-hidden",
+                                        "flex-shrink-0 flex flex-col items-center justify-center transition-all border",
                                         isActive
-                                            ? "bg-purple-600 border-purple-500 text-white shadow-[0_0_30px_rgba(147,51,234,0.3)]"
-                                            : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white"
+                                            ? "bg-[#FBBF24] border-[#FBBF24] text-black font-bold"
+                                            : "bg-[#111827] border-[#1F2937] text-neutral-400 hover:text-white"
                                     )}
                                     style={{
-                                        width: isScrolled ? "44px" : "64px",
-                                        height: isScrolled ? "44px" : "80px",
-                                        borderRadius: isScrolled ? "10px" : "18px"
+                                        width: isScrolled ? "48px" : "64px",
+                                        height: isScrolled ? "48px" : "80px",
+                                        borderRadius: "12px"
                                     }}
                                 >
                                     {!isScrolled && (
-                                        <motion.span
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="text-[9px] font-black uppercase tracking-widest mb-1"
-                                        >
+                                        <span className="text-[10px] font-bold uppercase tracking-widest mb-1 text-inherit">
                                             {dayName.substring(0, 3)}
-                                        </motion.span>
+                                        </span>
                                     )}
                                     <span className={cn(
-                                        "font-black tracking-tighter",
-                                        isScrolled ? "text-sm" : "text-lg"
+                                        "font-bold tabular-nums",
+                                        isScrolled ? "text-base" : "text-xl"
                                     )}>
                                         {dayNum}
                                     </span>
-                                    {!isScrolled && (
-                                        <motion.span
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="text-[9px] font-bold uppercase opacity-60"
-                                        >
-                                            {month}
-                                        </motion.span>
-                                    )}
                                 </button>
                             );
                         })}
@@ -136,35 +122,33 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                 </div>
 
                 {/* 2. League Navigation */}
-                <div className="flex overflow-x-auto gap-2 scrollbar-hide no-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-                    <motion.button
-                        layout
+                <div className="flex overflow-x-auto gap-2 no-scrollbar">
+                    <button
                         onClick={() => setActiveLeagueId(null)}
                         className={cn(
-                            "rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border flex-shrink-0 px-4",
+                            "rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border px-4",
                             activeLeagueId === null
-                                ? "bg-white/10 border-white/20 text-white"
-                                : "bg-white/5 border-white/5 text-white/40 hover:text-white hover:bg-white/10"
+                                ? "bg-white border-white text-black"
+                                : "bg-[#111827] border-[#1F2937] text-neutral-400 hover:text-white"
                         )}
-                        style={{ height: isScrolled ? "28px" : "36px" }}
+                        style={{ height: "32px" }}
                     >
-                        All
-                    </motion.button>
+                        All Markets
+                    </button>
                     {SUPPORTED_LEAGUES.map((league) => (
-                        <motion.button
-                            layout
+                        <button
                             key={league.id}
                             onClick={() => setActiveLeagueId(league.id)}
                             className={cn(
-                                "rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border flex items-center gap-2 flex-shrink-0 px-4",
+                                "rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border flex items-center gap-2 px-4 whitespace-nowrap",
                                 activeLeagueId === league.id
-                                    ? "bg-white/10 border-white/20 text-white"
-                                    : "bg-white/5 border-white/5 text-white/40 hover:text-white hover:bg-white/10"
+                                    ? "bg-white border-white text-black"
+                                    : "bg-[#111827] border-[#1F2937] text-neutral-400 hover:text-white"
                             )}
-                            style={{ height: isScrolled ? "28px" : "36px" }}
+                            style={{ height: "32px" }}
                         >
                             {league.name}
-                        </motion.button>
+                        </button>
                     ))}
                 </div>
             </motion.div>
@@ -172,10 +156,10 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
             <AnimatePresence mode="wait">
                 <motion.div
                     key={activeLeagueId || "all"}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-24 pt-8"
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-24"
                 >
                     {sortedDates.map((dateStr) => {
                         const dateMatches = groupedByDate[dateStr];
@@ -189,29 +173,21 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                             <div
                                 key={dateStr}
                                 id={`date-section-${dateStr.replace(/\s+/g, '-')}`}
-                                className="scroll-mt-64 space-y-12"
+                                className="scroll-mt-64 space-y-8"
                             >
-                                {/* League Grouping within this Date */}
                                 {SUPPORTED_LEAGUES.map((league) => {
                                     const leagueMatches = filteredMatches.filter(m => m.league_id === league.id);
                                     if (leagueMatches.length === 0) return null;
 
-                                    const sortedLeagueMatches = [...leagueMatches].sort((a, b) =>
-                                        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
-                                    );
-
                                     return (
-                                        <div key={league.id} className="space-y-8">
-                                            <div className="flex items-center gap-4 px-2">
-                                                <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                                                    <Trophy className="w-4 h-4" />
-                                                </div>
-                                                <h4 className="text-xs font-black text-white uppercase tracking-[0.2em]">{league.name}</h4>
-                                                <div className="flex-1 h-[1px] bg-white/5 ml-4" />
+                                        <div key={league.id} className="space-y-6">
+                                            <div className="flex items-center gap-4">
+                                                <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em]">{league.name}</h4>
+                                                <div className="flex-1 h-[1px] bg-[#1F2937]" />
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                                {sortedLeagueMatches.map((m) => (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                                {leagueMatches.map((m) => (
                                                     <MatchCard
                                                         key={m.id}
                                                         id={m.id}
@@ -236,10 +212,10 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                     })}
 
                     {initialMatches.length === 0 && (
-                        <div className="glass-dark rounded-[40px] p-24 text-center border border-white/5">
-                            <h3 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">No Action Found</h3>
-                            <p className="text-white/40 text-sm max-w-md mx-auto">
-                                We couldn't find any matches across our supported leagues for the next few days.
+                        <div className="bg-[#111827] rounded-xl p-24 text-center border border-[#1F2937]">
+                            <h3 className="text-2xl font-bold text-white mb-4 uppercase tracking-tighter">No Action Found</h3>
+                            <p className="text-neutral-500 text-sm max-w-md mx-auto">
+                                We couldn't find any matches across our supported leagues.
                                 Our algorithms are scanning for the next big opportunity.
                             </p>
                         </div>
