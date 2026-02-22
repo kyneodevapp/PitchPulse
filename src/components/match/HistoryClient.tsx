@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { PastMatch } from "@/lib/services/prediction";
 import { ResultCard } from "./ResultCard";
-import { cn } from "@/lib/utils";
+import { CommandBar } from "./CommandBar";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, TrendingUp, TrendingDown } from "lucide-react";
 
 interface HistoryClientProps {
     initialMatches: PastMatch[];
@@ -25,7 +24,7 @@ const SUPPORTED_LEAGUES = [
 
 export function HistoryClient({ initialMatches }: HistoryClientProps) {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [isScrolled, setIsScrolled] = useState(false);
+    const [activeLeagueId, setActiveLeagueId] = useState<number | null>(null);
 
     // Grouping by Date
     const groupedByDate = initialMatches.reduce((acc, match) => {
@@ -45,113 +44,38 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
     const hitRate = totalMatches > 0 ? Math.round((totalHits / totalMatches) * 100) : 0;
 
     useEffect(() => {
-        const handleScroll = () => setIsScrolled(window.scrollY > 100);
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
-
-    useEffect(() => {
         if (sortedDates.length > 0 && !selectedDate) {
             setSelectedDate(sortedDates[0]);
         }
     }, [sortedDates, selectedDate]);
 
-    const scrollToDate = (dateStr: string) => {
+    const handleDateChange = (dateStr: string) => {
         setSelectedDate(dateStr);
         const element = document.getElementById(`history-date-${dateStr.replace(/\s+/g, '-')}`);
         if (element) {
-            const yOffset = isScrolled ? -120 : -220;
+            const yOffset = -140;
             const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
             window.scrollTo({ top: y, behavior: 'smooth' });
         }
     };
 
     return (
-        <div className="space-y-12">
-            {/* Sticky Header */}
-            <motion.div
-                animate={{
-                    paddingTop: isScrolled ? "8px" : "16px",
-                    paddingBottom: isScrolled ? "8px" : "16px",
-                    backgroundColor: isScrolled ? "#0B0F14" : "transparent"
-                }}
-                className={cn(
-                    "sticky top-[72px] z-30 -mx-4 px-4 border-b border-[#1F2937] transition-colors",
-                    isScrolled ? "shadow-2xl" : ""
-                )}
-            >
-                {/* Stats Bar */}
-                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-3">
-                    <div className="flex items-center gap-2 bg-[#111827] border border-[#1F2937] rounded-lg px-3 py-1.5 flex-shrink-0">
-                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Hit Rate</span>
-                        <span className={cn(
-                            "text-sm font-bold tabular-nums",
-                            hitRate >= 60 ? "text-emerald-400" : hitRate >= 40 ? "text-amber-400" : "text-rose-400"
-                        )}>{hitRate}%</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-[#111827] border border-[#1F2937] rounded-lg px-3 py-1.5 flex-shrink-0">
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Hits</span>
-                        <span className="text-sm font-bold text-emerald-400 tabular-nums">{totalHits}</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-[#111827] border border-[#1F2937] rounded-lg px-3 py-1.5 flex-shrink-0">
-                        <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
-                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Misses</span>
-                        <span className="text-sm font-bold text-rose-400 tabular-nums">{totalMatches - totalHits}</span>
-                    </div>
-                </div>
-
-                {/* Date Navigation */}
-                <div className="flex overflow-x-auto gap-3 pb-1 scroll-smooth no-scrollbar">
-                    {sortedDates.map((dateStr) => {
-                        const isActive = selectedDate === dateStr;
-                        const [dayName, dayNum, month] = dateStr.split(' ');
-                        const dayHits = groupedByDate[dateStr].filter(m => m.prediction_hit).length;
-                        const dayTotal = groupedByDate[dateStr].length;
-                        return (
-                            <button
-                                key={dateStr}
-                                onClick={() => scrollToDate(dateStr)}
-                                className={cn(
-                                    "flex-shrink-0 flex flex-col items-center justify-center transition-all border relative",
-                                    isActive
-                                        ? "bg-[#FBBF24] border-[#FBBF24] text-black font-bold"
-                                        : "bg-[#111827] border-[#1F2937] text-neutral-400 hover:text-white"
-                                )}
-                                style={{
-                                    width: isScrolled ? "48px" : "64px",
-                                    height: isScrolled ? "48px" : "80px",
-                                    borderRadius: "12px"
-                                }}
-                            >
-                                {!isScrolled && (
-                                    <span className="text-[10px] font-bold uppercase tracking-widest mb-1 text-inherit">
-                                        {dayName.substring(0, 3)}
-                                    </span>
-                                )}
-                                <span className={cn(
-                                    "font-bold tabular-nums",
-                                    isScrolled ? "text-base" : "text-xl"
-                                )}>
-                                    {dayNum}
-                                </span>
-                                {/* Hit rate mini indicator */}
-                                {!isScrolled && (
-                                    <div className={cn(
-                                        "absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full",
-                                        dayHits / dayTotal >= 0.6 ? "bg-emerald-500" : dayHits / dayTotal >= 0.4 ? "bg-amber-500" : "bg-rose-500"
-                                    )} title={`${dayHits}/${dayTotal} Hits`} />
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </motion.div>
+        <div className="space-y-6">
+            <CommandBar
+                selectedDate={selectedDate || ""}
+                onDateChange={handleDateChange}
+                availableDates={sortedDates}
+                activeLeagueId={activeLeagueId}
+                onLeagueChange={setActiveLeagueId}
+                leagues={SUPPORTED_LEAGUES}
+                isHistory={true}
+                hitRate={hitRate}
+            />
 
             {/* Match Results */}
             <AnimatePresence mode="wait">
                 <motion.div
-                    key="history-results"
+                    key={activeLeagueId || "history-results"}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -159,6 +83,11 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
                 >
                     {sortedDates.map((dateStr) => {
                         const dateMatches = groupedByDate[dateStr];
+                        const filteredMatches = activeLeagueId
+                            ? dateMatches.filter(m => m.league_id === activeLeagueId)
+                            : dateMatches;
+
+                        if (filteredMatches.length === 0) return null;
 
                         return (
                             <div
@@ -167,7 +96,7 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
                                 className="scroll-mt-64 space-y-8"
                             >
                                 {SUPPORTED_LEAGUES.map((league) => {
-                                    const leagueMatches = dateMatches.filter(m => m.league_id === league.id);
+                                    const leagueMatches = filteredMatches.filter(m => m.league_id === league.id);
                                     if (leagueMatches.length === 0) return null;
 
                                     const leagueHits = leagueMatches.filter(m => m.prediction_hit).length;

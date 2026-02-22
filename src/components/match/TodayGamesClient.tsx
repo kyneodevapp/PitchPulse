@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Match } from "@/lib/services/prediction";
 import { MatchCard } from "./MatchCard";
-import { cn } from "@/lib/utils";
+import { CommandBar } from "./CommandBar";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Clock } from "lucide-react";
 
 interface TodayGamesClientProps {
     initialMatches: Match[];
@@ -26,8 +25,6 @@ const SUPPORTED_LEAGUES = [
 export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
     const [activeLeagueId, setActiveLeagueId] = useState<number | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [isScrolled, setIsScrolled] = useState(false);
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // Grouping by Date
     const groupedByDate = initialMatches.reduce((acc, match) => {
@@ -42,116 +39,32 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
     });
 
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 100);
-        };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
-
-    useEffect(() => {
         if (sortedDates.length > 0 && !selectedDate) {
             setSelectedDate(sortedDates[0]);
         }
     }, [sortedDates, selectedDate]);
 
-    const scrollToDate = (dateStr: string) => {
+    const handleDateChange = (dateStr: string) => {
         setSelectedDate(dateStr);
         const element = document.getElementById(`date-section-${dateStr.replace(/\s+/g, '-')}`);
         if (element) {
-            const yOffset = isScrolled ? -120 : -220;
+            // New offset for single-row command bar
+            const yOffset = -140;
             const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
             window.scrollTo({ top: y, behavior: 'smooth' });
         }
     };
 
     return (
-        <div className="space-y-12">
-            {/* Unified Sticky Header for Navigation */}
-            <motion.div
-                animate={{
-                    paddingTop: isScrolled ? "8px" : "16px",
-                    paddingBottom: isScrolled ? "8px" : "16px",
-                    backgroundColor: isScrolled ? "#0B0F14" : "transparent"
-                }}
-                className={cn(
-                    "sticky top-[72px] z-30 -mx-4 px-4 border-b border-[#1F2937] transition-colors",
-                    isScrolled ? "shadow-2xl" : ""
-                )}
-            >
-                {/* 1. Date Navigation (Calendar) */}
-                <div className="relative mb-4">
-                    <div
-                        ref={scrollContainerRef}
-                        className="flex overflow-x-auto gap-3 pb-1 scroll-smooth no-scrollbar"
-                    >
-                        {sortedDates.map((dateStr) => {
-                            const isActive = selectedDate === dateStr;
-                            const [dayName, dayNum, month] = dateStr.split(' ');
-                            return (
-                                <button
-                                    key={dateStr}
-                                    onClick={() => scrollToDate(dateStr)}
-                                    className={cn(
-                                        "flex-shrink-0 flex flex-col items-center justify-center transition-all border",
-                                        isActive
-                                            ? "bg-[#FBBF24] border-[#FBBF24] text-black font-bold"
-                                            : "bg-[#111827] border-[#1F2937] text-neutral-400 hover:text-white"
-                                    )}
-                                    style={{
-                                        width: isScrolled ? "48px" : "64px",
-                                        height: isScrolled ? "48px" : "80px",
-                                        borderRadius: "12px"
-                                    }}
-                                >
-                                    {!isScrolled && (
-                                        <span className="text-[10px] font-bold uppercase tracking-widest mb-1 text-inherit">
-                                            {dayName.substring(0, 3)}
-                                        </span>
-                                    )}
-                                    <span className={cn(
-                                        "font-bold tabular-nums",
-                                        isScrolled ? "text-base" : "text-xl"
-                                    )}>
-                                        {dayNum}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* 2. League Navigation */}
-                <div className="flex overflow-x-auto gap-2 no-scrollbar">
-                    <button
-                        onClick={() => setActiveLeagueId(null)}
-                        className={cn(
-                            "rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border px-4",
-                            activeLeagueId === null
-                                ? "bg-white border-white text-black"
-                                : "bg-[#111827] border-[#1F2937] text-neutral-400 hover:text-white"
-                        )}
-                        style={{ height: "32px" }}
-                    >
-                        All Markets
-                    </button>
-                    {SUPPORTED_LEAGUES.map((league) => (
-                        <button
-                            key={league.id}
-                            onClick={() => setActiveLeagueId(league.id)}
-                            className={cn(
-                                "rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border flex items-center gap-2 px-4 whitespace-nowrap",
-                                activeLeagueId === league.id
-                                    ? "bg-white border-white text-black"
-                                    : "bg-[#111827] border-[#1F2937] text-neutral-400 hover:text-white"
-                            )}
-                            style={{ height: "32px" }}
-                        >
-                            {league.name}
-                        </button>
-                    ))}
-                </div>
-            </motion.div>
+        <div className="space-y-6">
+            <CommandBar
+                selectedDate={selectedDate || ""}
+                onDateChange={handleDateChange}
+                availableDates={sortedDates}
+                activeLeagueId={activeLeagueId}
+                onLeagueChange={setActiveLeagueId}
+                leagues={SUPPORTED_LEAGUES}
+            />
 
             <AnimatePresence mode="wait">
                 <motion.div
