@@ -140,9 +140,9 @@ export function MatchCard({
                 className="bg-[#111827] rounded-xl overflow-hidden border border-[#1F2937] hover:border-amber-400/50 transition-colors duration-200 flex flex-col h-full cursor-pointer group/card shadow-lg"
                 onClick={() => setIsModalOpen(true)}
             >
-                <div className="p-4 sm:p-5 lg:p-6 flex-1 flex flex-col">
+                <div className="p-6 flex-1 flex flex-col">
                     {/* Header: Status & Time */}
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                             <div className={cn(
                                 "flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest",
@@ -174,55 +174,60 @@ export function MatchCard({
                         </div>
                     </div>
 
-                    {/* Teams Section */}
-                    <div className="flex items-center justify-between gap-4 mb-8">
-                        {/* Home Team */}
-                        <div className="flex-1 flex flex-col items-center text-center">
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 mb-3 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937]">
+                    {/* Teams Section - Redesigned 3-Column Grid */}
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 mb-6 pb-6 border-b border-[#1F2937]/50">
+                        {/* Home Team Column */}
+                        <div className="flex flex-col items-center text-center w-full">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
                                 {!homeError && homeLogo ? (
                                     <img
                                         src={homeLogo}
                                         alt={homeTeam}
-                                        className="w-10 h-10 sm:w-12 sm:h-12 object-contain p-1"
+                                        className="w-8 h-8 sm:w-10 sm:h-10 object-contain p-1"
                                         onError={() => setHomeError(true)}
                                     />
                                 ) : (
-                                    <ShieldAlert className="w-6 h-6 text-neutral-600" />
+                                    <ShieldAlert className="w-5 h-5 text-neutral-600" />
                                 )}
                             </div>
-                            <h3 className="text-sm sm:text-xl lg:text-2xl font-bold text-white tracking-tight line-clamp-2 leading-tight">
-                                {homeTeam}
-                            </h3>
+                            <div className="min-h-[2.5rem] flex items-start justify-center w-full">
+                                <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
+                                    {homeTeam}
+                                </h3>
+                            </div>
                         </div>
 
-                        <div className="flex flex-col items-center">
-                            <span className="text-xs font-bold text-neutral-600">VS</span>
+                        {/* Middle Column (VS) */}
+                        <div className="flex items-center justify-center h-12 sm:h-14 px-2">
+                            <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">VS</span>
                         </div>
 
-                        {/* Away Team */}
-                        <div className="flex-1 flex flex-col items-center text-center">
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 mb-3 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937]">
+                        {/* Away Team Column */}
+                        <div className="flex flex-col items-center text-center w-full">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
                                 {!awayError && awayLogo ? (
                                     <img
                                         src={awayLogo}
                                         alt={awayTeam}
-                                        className="w-10 h-10 sm:w-12 sm:h-12 object-contain p-1"
+                                        className="w-8 h-8 sm:w-10 sm:h-10 object-contain p-1"
                                         onError={() => setAwayError(true)}
                                     />
                                 ) : (
-                                    <ShieldAlert className="w-6 h-6 text-neutral-600" />
+                                    <ShieldAlert className="w-5 h-5 text-neutral-600" />
                                 )}
                             </div>
-                            <h3 className="text-sm sm:text-xl lg:text-2xl font-bold text-white tracking-tight line-clamp-2 leading-tight">
-                                {awayTeam}
-                            </h3>
+                            <div className="min-h-[2.5rem] flex items-start justify-center w-full">
+                                <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
+                                    {awayTeam}
+                                </h3>
+                            </div>
                         </div>
                     </div>
 
                     {/* Metrics Footer Section */}
                     <div className="mt-auto space-y-6">
                         {/* Signal & Odds */}
-                        <div className="flex items-end justify-between border-t border-[#1F2937] pt-4">
+                        <div className="flex items-end justify-between pt-0">
                             <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-1 mb-1">
                                     {[...Array(5)].map((_, i) => (

@@ -22,9 +22,9 @@ export function ResultCard({ match, leagueName }: ResultCardProps) {
             transition={{ duration: 0.3 }}
             className="bg-[#111827] rounded-xl overflow-hidden border border-[#1F2937] hover:border-amber-400/50 transition-colors duration-200 flex flex-col h-full cursor-pointer group/card shadow-lg"
         >
-            <div className="p-4 sm:p-5 lg:p-6 flex-1 flex flex-col">
+            <div className="p-6 flex-1 flex flex-col">
                 {/* Header: Status & Result */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-neutral-800 text-neutral-300 text-[10px] sm:text-xs font-bold uppercase tracking-widest">
                             <Clock className="w-3 h-3 sm:w-4 h-4" />
@@ -59,61 +59,65 @@ export function ResultCard({ match, leagueName }: ResultCardProps) {
                     </div>
                 </div>
 
-                {/* Teams Section */}
-                <div className="flex items-center justify-between gap-4 mb-8">
-                    {/* Home Team */}
-                    <div className="flex-1 flex flex-col items-center text-center">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 mb-3 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937]">
+                {/* Teams Section - Redesigned 3-Column Grid */}
+                <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 mb-6 pb-6 border-b border-[#1F2937]/50">
+                    {/* Home Team Column */}
+                    <div className="flex flex-col items-center text-center w-full">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
                             {!homeError && match.home_logo ? (
                                 <img
                                     src={match.home_logo}
                                     alt={match.home_team}
-                                    className="w-10 h-10 sm:w-12 sm:h-12 object-contain p-1"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain p-1"
                                     onError={() => setHomeError(true)}
                                 />
                             ) : (
-                                <ShieldAlert className="w-6 h-6 text-neutral-600" />
+                                <ShieldAlert className="w-5 h-5 text-neutral-600" />
                             )}
                         </div>
-                        <h3 className="text-base sm:text-xl font-bold text-white tracking-tight line-clamp-2 leading-tight">
-                            {match.home_team}
-                        </h3>
-                    </div>
-
-                    {/* Score */}
-                    <div className="flex flex-col items-center gap-1 px-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-2xl sm:text-3xl font-bold text-white tabular-nums">{match.home_score}</span>
-                            <span className="text-lg font-bold text-neutral-700">-</span>
-                            <span className="text-2xl sm:text-3xl font-bold text-white tabular-nums">{match.away_score}</span>
+                        <div className="min-h-[2.5rem] flex items-start justify-center w-full">
+                            <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
+                                {match.home_team}
+                            </h3>
                         </div>
-                        <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest bg-[#0B0F14] px-2 py-0.5 rounded border border-[#1F2937]">FT</span>
                     </div>
 
-                    {/* Away Team */}
-                    <div className="flex-1 flex flex-col items-center text-center">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 mb-3 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937]">
+                    {/* Middle Column (Score) */}
+                    <div className="flex flex-col items-center justify-center h-12 sm:h-14 px-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xl sm:text-2xl font-bold text-white tabular-nums">{match.home_score}</span>
+                            <span className="text-sm font-bold text-neutral-700">-</span>
+                            <span className="text-xl sm:text-2xl font-bold text-white tabular-nums">{match.away_score}</span>
+                        </div>
+                        <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">FT</span>
+                    </div>
+
+                    {/* Away Team Column */}
+                    <div className="flex flex-col items-center text-center w-full">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
                             {!awayError && match.away_logo ? (
                                 <img
                                     src={match.away_logo}
                                     alt={match.away_team}
-                                    className="w-10 h-10 sm:w-12 sm:h-12 object-contain p-1"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain p-1"
                                     onError={() => setAwayError(true)}
                                 />
                             ) : (
-                                <ShieldAlert className="w-6 h-6 text-neutral-600" />
+                                <ShieldAlert className="w-5 h-5 text-neutral-600" />
                             )}
                         </div>
-                        <h3 className="text-base sm:text-xl font-bold text-white tracking-tight line-clamp-2 leading-tight">
-                            {match.away_team}
-                        </h3>
+                        <div className="min-h-[2.5rem] flex items-start justify-center w-full">
+                            <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
+                                {match.away_team}
+                            </h3>
+                        </div>
                     </div>
                 </div>
 
                 {/* Metrics Footer Section */}
                 <div className="mt-auto space-y-6">
                     {/* Signal & Results */}
-                    <div className="flex items-end justify-between border-t border-[#1F2937] pt-4">
+                    <div className="flex items-end justify-between pt-0">
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1 mb-1">
                                 {[...Array(5)].map((_, i) => (
