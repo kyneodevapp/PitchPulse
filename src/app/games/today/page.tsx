@@ -3,7 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { TodayGamesClient } from "@/components/match/TodayGamesClient";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 120; // ISR: regenerate every 2 min
 
 export default async function TodayGamesPage() {
     // Fetch fixtures for the next 10 days for full coverage across all 7 leagues

@@ -276,7 +276,12 @@ export async function GET(request: Request) {
             meta: { generatedAt: new Date().toISOString(), dataSource: "SportMonks API + PitchPulse Quant Engine v2", fixtureId },
         };
 
-        return NextResponse.json(response);
+        return NextResponse.json(response, {
+            headers: {
+                "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+                "CDN-Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+            },
+        });
     } catch (error) {
         console.error("[Analysis API] Error:", error);
         return NextResponse.json({

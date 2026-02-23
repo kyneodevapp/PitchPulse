@@ -4,7 +4,7 @@ import { sportmonksService, Match } from "@/lib/services/prediction";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import Link from "next/link";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 120; // ISR: regenerate every 2 min
 
 export default async function Home() {
     // Fetch fixtures for the next 5 days

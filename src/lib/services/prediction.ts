@@ -744,13 +744,20 @@ class SportMonksService {
         const activeFixtures = allFixtures.filter((f: any) => ![5, 7, 8].includes(f.state_id));
         if (activeFixtures.length === 0) return [];
 
-        // Collect unique season IDs and fetch standings
+        // Collect unique season IDs and fetch standings IN PARALLEL (perf fix)
         const seasonIds = [...new Set(activeFixtures.map((f: any) => f.season_id).filter(Boolean))];
         const allTeamStats = new Map<number, TeamStats>();
-        for (const sid of seasonIds) {
-            const stats = await this.getTeamStats(sid);
+        const allStatsArrays = await Promise.all(
+            seasonIds.map(sid => this.getTeamStats(sid))
+        );
+        for (const stats of allStatsArrays) {
             stats.forEach((v, k) => allTeamStats.set(k, v));
         }
+
+        // Prefetch all odds in parallel to warm cache (perf fix)
+        await Promise.all(
+            activeFixtures.map((f: any) => this.fetchFixtureOdds(f.id))
+        );
 
         const results = await Promise.all(activeFixtures.map(async (f: any) => {
             const homeP = f.participants.find((p: any) => p.meta.location === "home");

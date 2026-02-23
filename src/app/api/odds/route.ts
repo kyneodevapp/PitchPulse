@@ -18,10 +18,20 @@ export async function GET(request: Request) {
             const rawOdds = await sportmonksService.getOddsForPrediction(
                 fixtureId, prediction, homeTeam, awayTeam
             );
-            return NextResponse.json(rawOdds);
+            return NextResponse.json(rawOdds, {
+                headers: {
+                    "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+                    "CDN-Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+                },
+            });
         } else {
             const odds = await sportmonksService.getOddsComparison(fixtureId);
-            return NextResponse.json({ all: odds, bet365: null, best: odds[0] || null });
+            return NextResponse.json({ all: odds, bet365: null, best: odds[0] || null }, {
+                headers: {
+                    "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+                    "CDN-Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+                },
+            });
         }
     } catch (error) {
         console.error("Odds API error:", error);

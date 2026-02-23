@@ -3,7 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { HistoryClient } from "@/components/match/HistoryClient";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300; // ISR: regenerate every 5 min (history is less time-sensitive)
 
 export default async function HistoryPage() {
     const pastFixtures = await sportmonksService.getPastFixtures(3);
