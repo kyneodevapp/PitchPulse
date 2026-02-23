@@ -63,6 +63,37 @@ interface MatchAnalysisModalProps {
     time?: string;
 }
 
+// ============ REUSABLE BADGE COMPONENT (Issue #2) ============
+
+type BadgeVariant = "High" | "Medium" | "Low" | "Elite" | "value";
+
+const BADGE_STYLES: Record<BadgeVariant, string> = {
+    High: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    Elite: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    Medium: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    Low: "bg-red-500/15 text-red-400 border-red-500/30",
+    value: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
+};
+
+function Badge({ variant, children, className }: {
+    variant: BadgeVariant;
+    children: React.ReactNode;
+    className?: string;
+}) {
+    return (
+        <span className={cn(
+            "inline-flex items-center justify-center",
+            "h-5 px-2 rounded-full border",
+            "text-[9px] font-bold uppercase tracking-wider",
+            "whitespace-nowrap",
+            BADGE_STYLES[variant] || BADGE_STYLES.Medium,
+            className,
+        )}>
+            {children}
+        </span>
+    );
+}
+
 // ============ CONFIDENCE GAUGE (SVG Ring) ============
 
 function ConfidenceGauge({ value, size = 120 }: { value: number; size?: number }) {
@@ -75,10 +106,8 @@ function ConfidenceGauge({ value, size = 120 }: { value: number; size?: number }
     return (
         <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
             <svg width={size} height={size} className="transform -rotate-90">
-                {/* Track */}
                 <circle cx={size / 2} cy={size / 2} r={radius} fill="none"
                     stroke="#1F2937" strokeWidth={6} />
-                {/* Progress */}
                 <motion.circle cx={size / 2} cy={size / 2} r={radius} fill="none"
                     stroke={color} strokeWidth={6} strokeLinecap="round"
                     strokeDasharray={circumference}
@@ -152,7 +181,7 @@ function MarketTab({
     );
 }
 
-// ============ MARKET CARD ============
+// ============ MARKET CARD (Issue #1 — VALUE badge contained, responsive) ============
 
 function MarketCard({ market, index }: { market: AnalysisMarket; index: number }) {
     const edgePct = (market.edge * 100).toFixed(1);
@@ -160,122 +189,125 @@ function MarketCard({ market, index }: { market: AnalysisMarket; index: number }
     const probColor = market.probability >= 65 ? "text-emerald-400" :
         market.probability >= 55 ? "text-amber-400" : "text-neutral-400";
 
-    const confBadgeColor = market.confidence === "High" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" :
-        market.confidence === "Medium" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" :
-            "bg-red-500/15 text-red-400 border-red-500/30";
-
     return (
         <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             className={cn(
-                "relative bg-[#111827] rounded-xl p-4 md:p-5 border transition-all duration-300 group",
+                "bg-[#111827] rounded-xl border transition-all duration-300 overflow-hidden",
                 isValue
                     ? "border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.08)]"
                     : "border-[#1F2937] hover:border-[#374151]"
             )}
         >
-            {/* Value Tag */}
-            {isValue && (
-                <div className="absolute -top-2.5 right-4 px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40">
-                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Value</span>
-                </div>
-            )}
-
-            <div className="flex items-start justify-between gap-4">
-                {/* LEFT: Market Info */}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="text-sm font-bold text-white truncate">{market.label}</span>
-                        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border", confBadgeColor)}>
-                            {market.confidence}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-4 mb-3">
-                        <div>
-                            <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest block">Probability</span>
-                            <span className={cn("text-lg font-bold tabular-nums", probColor)}>
-                                {market.probability}%
+            <div className="p-4 md:p-5">
+                {/* ── DESKTOP: side-by-side layout ── */}
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    {/* LEFT: Market Info */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="text-sm font-bold text-white truncate max-w-[200px] md:max-w-none">
+                                {market.label}
                             </span>
+                            <Badge variant={market.confidence}>{market.confidence}</Badge>
+                            {/* Mobile VALUE badge — inline */}
+                            {isValue && (
+                                <Badge variant="value" className="md:hidden">Value</Badge>
+                            )}
                         </div>
-                        {/* Probability Bar */}
-                        <div className="flex-1 max-w-32">
-                            <div className="h-1.5 w-full bg-[#0B0F14] rounded-full overflow-hidden border border-[#1F2937]">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${Math.min(100, market.probability)}%` }}
-                                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 + index * 0.05 }}
-                                    className={cn(
-                                        "h-full rounded-full",
-                                        market.probability >= 65 ? "bg-emerald-500" :
-                                            market.probability >= 55 ? "bg-amber-500" : "bg-rose-500"
-                                    )}
-                                />
+
+                        <div className="flex items-center gap-4 mb-1">
+                            <div>
+                                <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest block">
+                                    Probability
+                                </span>
+                                <span className={cn("text-lg font-bold tabular-nums", probColor)}>
+                                    {market.probability}%
+                                </span>
+                            </div>
+                            {/* Probability Bar */}
+                            <div className="flex-1 max-w-32">
+                                <div className="h-1.5 w-full bg-[#0B0F14] rounded-full overflow-hidden border border-[#1F2937]">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.min(100, market.probability)}%` }}
+                                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 + index * 0.05 }}
+                                        className={cn(
+                                            "h-full rounded-full",
+                                            market.probability >= 65 ? "bg-emerald-500" :
+                                                market.probability >= 55 ? "bg-amber-500" : "bg-rose-500"
+                                        )}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* RIGHT: Odds & Edge — fixed width, flex-col, overflow-safe */}
+                    <div className="relative flex flex-col items-end flex-shrink-0 w-full md:w-[110px] md:max-w-[110px] overflow-hidden p-0 md:text-right">
+                        {/* Desktop VALUE badge — inside odds container */}
+                        {isValue && (
+                            <div className="hidden md:block mb-1.5">
+                                <Badge variant="value">Value</Badge>
+                            </div>
+                        )}
+
+                        {market.odds ? (
+                            <>
+                                <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest block">
+                                    Best Odds
+                                </span>
+                                <span className={cn(
+                                    "text-xl font-bold tabular-nums block",
+                                    isValue ? "text-emerald-400" : "text-white"
+                                )}>
+                                    {market.odds.toFixed(2)}
+                                </span>
+                                <span className="text-[9px] font-medium text-neutral-500 block truncate max-w-full">
+                                    {market.bookmaker}
+                                </span>
+                                <span className={cn(
+                                    "text-[10px] font-bold mt-0.5 block",
+                                    isValue ? "text-emerald-400" : market.edge > 0 ? "text-amber-400" : "text-neutral-600"
+                                )}>
+                                    {market.edge > 0 ? `+${edgePct}%` : `${edgePct}%`} edge
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">
+                                Odds N/A
+                            </span>
+                        )}
+                    </div>
                 </div>
 
-                {/* RIGHT: Odds & Edge */}
-                <div className="text-right flex-shrink-0 min-w-[90px]">
-                    {market.odds ? (
-                        <>
-                            <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest block">Best Odds</span>
-                            <span className={cn(
-                                "text-xl font-bold tabular-nums block",
-                                isValue ? "text-emerald-400" : "text-white"
-                            )}>
-                                {market.odds.toFixed(2)}
-                            </span>
-                            <span className="text-[9px] font-medium text-neutral-500 block truncate">
-                                {market.bookmaker}
-                            </span>
-                            <span className={cn(
-                                "text-[10px] font-bold mt-1 inline-block",
-                                isValue ? "text-emerald-400" : market.edge > 0 ? "text-amber-400" : "text-neutral-600"
-                            )}>
-                                {market.edge > 0 ? `+${edgePct}%` : `${edgePct}%`} edge
-                            </span>
-                        </>
-                    ) : (
-                        <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">
-                            Odds N/A
-                        </span>
-                    )}
+                {/* Reasoning */}
+                <div className="mt-3 pt-3 border-t border-[#1F2937]/50">
+                    <p className="text-[11px] font-medium text-neutral-500 leading-relaxed italic">
+                        {market.reasoning}
+                    </p>
                 </div>
-            </div>
-
-            {/* Reasoning */}
-            <div className="mt-3 pt-3 border-t border-[#1F2937]/50">
-                <p className="text-[11px] font-medium text-neutral-500 leading-relaxed italic">
-                    {market.reasoning}
-                </p>
             </div>
         </motion.div>
     );
 }
 
-// ============ SIGNAL CARD WITH TOOLTIP ============
+// ============ SIGNAL CARD WITH TOOLTIP (Issue #2 — uses Badge) ============
 
 function SignalCard({ signal }: { signal: AnalysisData['signals'][0] }) {
     const [showTooltip, setShowTooltip] = useState(false);
+    const variant = (signal.rating === "High" || signal.rating === "Elite") ? "High" :
+        signal.rating === "Medium" ? "Medium" : "Low";
 
     return (
-        <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 hover:bg-[#1C2533] transition-colors group relative">
-            <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+        <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 hover:bg-[#1C2533] transition-colors group relative overflow-hidden">
+            <div className="flex items-center justify-between mb-3 gap-2">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest truncate">
                     {signal.name}
                 </span>
-                <div className="flex items-center gap-2">
-                    <span className={cn(
-                        "text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase",
-                        signal.rating === "High" || signal.rating === "Elite" ? "text-emerald-400 bg-emerald-400/10" :
-                            signal.rating === "Medium" ? "text-amber-400 bg-amber-400/10" : "text-rose-400 bg-red-400/10"
-                    )}>
-                        {signal.rating}
-                    </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge variant={variant as BadgeVariant}>{signal.rating}</Badge>
                     <button
                         className="relative"
                         onMouseEnter={() => setShowTooltip(true)}
@@ -366,14 +398,12 @@ export function MatchAnalysisModal({
     const valuePlays = data?.markets.filter(m => m.isValue && m.probability < 65 && !m.correctScoreline) || [];
     const correctScores = data?.markets.filter(m => m.correctScoreline) || [];
 
-    // Also add non-value, lower prob markets that aren't covered above
     const remainingMarkets = data?.markets.filter(m =>
         !m.correctScoreline &&
         m.probability < 55 &&
         !m.isValue
     ) || [];
 
-    // Merge remaining into medium edge for display
     const mediumAll = [...mediumEdge, ...remainingMarkets.filter(m => m.probability >= 45)];
 
     const modalContent = (
@@ -389,7 +419,7 @@ export function MatchAnalysisModal({
                         className="absolute inset-0 bg-black/90 backdrop-blur-xl"
                     />
 
-                    {/* Modal */}
+                    {/* Modal — Issue #4: relative container for absolute close button */}
                     <motion.div
                         initial={{ opacity: 0, y: 20, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -397,17 +427,27 @@ export function MatchAnalysisModal({
                         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                         className="relative w-full max-w-4xl h-[calc(100dvh-0.5rem)] md:h-auto md:max-h-[92vh] bg-[#0B0F14] border border-[#1F2937] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
                     >
-                        {/* Close */}
-                        <button onClick={onClose}
-                            className="absolute top-3 right-3 md:top-5 md:right-5 p-2 rounded-lg bg-[#111827]/80 hover:bg-[#1F2937] text-white transition-all border border-[#1F2937] z-[60] backdrop-blur-sm">
+                        {/* Close Button — Issue #4: fixed 16px inset, 40px touch target, never overlaps scrollbar */}
+                        <button
+                            onClick={onClose}
+                            className={cn(
+                                "absolute top-4 right-4 z-[60]",
+                                "w-10 h-10 min-w-[40px] min-h-[40px]",
+                                "flex items-center justify-center",
+                                "rounded-lg bg-[#111827]/90 backdrop-blur-sm",
+                                "border border-[#1F2937]",
+                                "text-neutral-400 hover:text-white hover:bg-[#1F2937]",
+                                "active:scale-95 transition-all duration-150",
+                            )}
+                        >
                             <X className="w-4 h-4" />
                         </button>
 
-                        {/* Scrollable Body */}
-                        <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
+                        {/* Scrollable Body — right padding keeps content away from scrollbar */}
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-0 md:pr-1">
                             {/* ═══════ HEADER ═══════ */}
                             <div className="border-b border-[#1F2937] bg-gradient-to-b from-[#111827]/80 to-[#0B0F14]">
-                                <div className="p-5 pt-12 md:p-10 md:pt-10">
+                                <div className="p-5 pt-14 md:p-10 md:pt-10">
                                     {/* League Badge */}
                                     {leagueName && (
                                         <div className="flex justify-center mb-5">
@@ -452,24 +492,18 @@ export function MatchAnalysisModal({
                                             </h2>
                                         </div>
 
-                                        {/* Confidence Gauge */}
+                                        {/* Confidence Gauge — Desktop */}
                                         <div className="hidden lg:flex flex-col items-center">
                                             {data?.summary && (
-                                                <ConfidenceGauge
-                                                    value={data.summary.confidence}
-                                                    size={130}
-                                                />
+                                                <ConfidenceGauge value={data.summary.confidence} size={130} />
                                             )}
                                         </div>
                                     </div>
 
-                                    {/* Mobile Confidence Gauge */}
+                                    {/* Confidence Gauge — Mobile/Tablet */}
                                     <div className="flex lg:hidden justify-center mt-5">
                                         {data?.summary && (
-                                            <ConfidenceGauge
-                                                value={data.summary.confidence}
-                                                size={100}
-                                            />
+                                            <ConfidenceGauge value={data.summary.confidence} size={100} />
                                         )}
                                     </div>
                                 </div>
@@ -482,7 +516,7 @@ export function MatchAnalysisModal({
                                         <div className="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
                                             <Zap className="w-4 h-4 text-amber-400" />
                                         </div>
-                                        <div>
+                                        <div className="min-w-0">
                                             <h4 className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.15em] mb-1.5">
                                                 AI Quantitative Insight
                                             </h4>
@@ -572,7 +606,7 @@ export function MatchAnalysisModal({
                                             </div>
                                         )}
 
-                                        {/* ═══════ FOOTER ═══════ */}
+                                        {/* ═══════ FOOTER — Issue #3: Only disclaimer, no meta ═══════ */}
                                         <div className="pt-6 space-y-4">
                                             <div className="p-6 rounded-xl bg-[#111827] border border-[#1F2937] text-center">
                                                 <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.15em] leading-relaxed max-w-2xl mx-auto">
@@ -580,27 +614,11 @@ export function MatchAnalysisModal({
                                                 </p>
                                             </div>
 
-                                            <div className="flex flex-col md:flex-row items-center justify-between gap-3 px-2">
-                                                <div className="flex items-center gap-2 text-[9px] font-bold text-neutral-600 uppercase tracking-widest">
-                                                    <span>Last Updated:</span>
-                                                    <span className="text-neutral-400">
-                                                        {data.meta.generatedAt
-                                                            ? new Date(data.meta.generatedAt).toLocaleString('en-GB', {
-                                                                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-                                                            })
-                                                            : "—"}
-                                                    </span>
-                                                </div>
-                                                <div className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest">
-                                                    Data: <span className="text-neutral-400">{data.meta.dataSource}</span>
-                                                </div>
-                                            </div>
-
                                             {/* Close Button */}
                                             <div className="flex justify-center pt-4 pb-2">
                                                 <button
                                                     onClick={onClose}
-                                                    className="px-10 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-[10px] font-black text-white uppercase tracking-[0.2em] transition-all border border-[#1F2937] hover:border-[#374151]"
+                                                    className="px-10 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-[10px] font-black text-white uppercase tracking-[0.2em] transition-all border border-[#1F2937] hover:border-[#374151] active:scale-95"
                                                 >
                                                     Close Terminal
                                                 </button>
