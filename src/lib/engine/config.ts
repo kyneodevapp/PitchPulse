@@ -57,7 +57,7 @@ export const POISSON_CONFIG = {
 
 export const VARIANCE_MULTIPLIERS: Record<string, number> = {
     'over_2.5': 0.95,
-    'under_2.5': 0.97,
+    'under_2.5': 1.00,
     'over_3.5': 0.90,
     'under_3.5': 1.00,
     'over_1.5': 0.97,
@@ -71,6 +71,9 @@ export const VARIANCE_MULTIPLIERS: Record<string, number> = {
     'home_under_3.5': 0.97,
     'away_under_3.5': 0.97,
     'result': 0.92,
+    'result_home': 0.92,
+    'result_draw': 0.92,
+    'result_away': 0.92,
     'draw_no_bet': 0.93,
     'correct_score': 0.75,
     'double_chance': 0.98,

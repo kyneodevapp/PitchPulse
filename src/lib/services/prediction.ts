@@ -1223,6 +1223,38 @@ class SportMonksService {
         };
     }
 
+    /**
+     * Public method: Get all data needed for the analysis modal.
+     * Wraps private methods to expose fixture stats, form, and odds.
+     */
+    async getAnalysisData(fixtureId: number): Promise<{
+        seasonId: number | null;
+        homeStats: TeamStats | undefined;
+        awayStats: TeamStats | undefined;
+        homeForm: TeamForm | undefined;
+        awayForm: TeamForm | undefined;
+        odds: any[];
+    }> {
+        const fixture = await this.fetchSportMonks(`/fixtures/${fixtureId}`, {
+            include: "participants"
+        });
+        const seasonId = fixture?.data?.season_id ?? null;
+        const homeP = fixture?.data?.participants?.find((p: any) => p.meta.location === "home");
+        const awayP = fixture?.data?.participants?.find((p: any) => p.meta.location === "away");
+
+        const [allStats, homeForm, awayForm, odds] = await Promise.all([
+            seasonId ? this.getTeamStats(seasonId) : Promise.resolve(new Map()),
+            homeP?.id ? this.getTeamForm(homeP.id) : Promise.resolve(undefined),
+            awayP?.id ? this.getTeamForm(awayP.id) : Promise.resolve(undefined),
+            this.fetchFixtureOdds(fixtureId),
+        ]);
+
+        const homeStats = homeP?.id ? allStats.get(homeP.id) : undefined;
+        const awayStats = awayP?.id ? allStats.get(awayP.id) : undefined;
+
+        return { seasonId, homeStats, awayStats, homeForm, awayForm, odds };
+    }
+
     async getMatchSummary(fixtureId: number): Promise<MatchSummary> {
         const cached = await PredictionStore.get(fixtureId);
         if (cached?.summary) return cached.summary;
