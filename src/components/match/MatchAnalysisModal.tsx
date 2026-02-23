@@ -117,11 +117,11 @@ function ConfidenceGauge({ value, size = 120 }: { value: number; size?: number }
                     style={{ filter: `drop-shadow(0 0 6px ${color})` }}
                 />
             </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: glowColor, borderRadius: '50%' }}>
-                <span className="text-2xl md:text-3xl font-bold text-white tabular-nums tracking-tighter">
+            <div className="absolute inset-0 flex flex-col items-center justify-center px-2" style={{ backgroundColor: glowColor, borderRadius: '50%' }}>
+                <span className="text-2xl md:text-3xl font-bold text-white tabular-nums tracking-tighter leading-none">
                     {value}%
                 </span>
-                <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.15em] mt-0.5"
+                <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.08em] mt-0.5 text-center"
                     style={{ color }}>
                     Model Confidence
                 </span>
@@ -201,74 +201,70 @@ function MarketCard({ market, index }: { market: AnalysisMarket; index: number }
                     : "border-[#1F2937] hover:border-[#374151]"
             )}
         >
-            <div className="p-4 md:p-5">
-                {/* ── DESKTOP: side-by-side layout ── */}
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                    {/* LEFT: Market Info */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="text-sm font-bold text-white truncate max-w-[200px] md:max-w-none">
-                                {market.label}
-                            </span>
-                            <Badge variant={market.confidence}>{market.confidence}</Badge>
-                            {/* Mobile VALUE badge — inline */}
-                            {isValue && (
-                                <Badge variant="value" className="md:hidden">Value</Badge>
-                            )}
-                        </div>
+            <div className="p-4 md:p-5 space-y-4">
+                {/* ── TOP: Title + Badges ── */}
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-white line-clamp-1 min-w-0">
+                        {market.label}
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <Badge variant={market.confidence}>{market.confidence}</Badge>
+                        {isValue && <Badge variant="value">Value</Badge>}
+                    </div>
+                </div>
 
-                        <div className="flex items-center gap-4 mb-1">
-                            <div>
-                                <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest block">
-                                    Probability
-                                </span>
-                                <span className={cn("text-lg font-bold tabular-nums", probColor)}>
-                                    {market.probability}%
-                                </span>
-                            </div>
-                            {/* Probability Bar */}
-                            <div className="flex-1 max-w-32">
-                                <div className="h-1.5 w-full bg-[#0B0F14] rounded-full overflow-hidden border border-[#1F2937]">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${Math.min(100, market.probability)}%` }}
-                                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 + index * 0.05 }}
-                                        className={cn(
-                                            "h-full rounded-full",
-                                            market.probability >= 65 ? "bg-emerald-500" :
-                                                market.probability >= 55 ? "bg-amber-500" : "bg-rose-500"
-                                        )}
-                                    />
-                                </div>
+                {/* ── MIDDLE: Probability (left) + Odds (right) ── */}
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 md:gap-6 items-start">
+                    {/* LEFT: Probability Block */}
+                    <div className="space-y-2">
+                        <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest block">
+                            Probability
+                        </span>
+                        <div className="flex items-baseline gap-3">
+                            <span className={cn("text-2xl md:text-2xl font-bold tabular-nums leading-none", probColor)}>
+                                {market.probability}%
+                            </span>
+                        </div>
+                        {/* Probability Bar — full width below percentage */}
+                        <div className="max-w-48 md:max-w-56">
+                            <div className="h-1.5 w-full bg-[#0B0F14] rounded-full overflow-hidden border border-[#1F2937]">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(100, market.probability)}%` }}
+                                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 + index * 0.05 }}
+                                    className={cn(
+                                        "h-full rounded-full",
+                                        market.probability >= 65 ? "bg-emerald-500" :
+                                            market.probability >= 55 ? "bg-amber-500" : "bg-rose-500"
+                                    )}
+                                />
                             </div>
                         </div>
                     </div>
 
-                    {/* RIGHT: Odds & Edge — fixed width, flex-col, overflow-safe */}
-                    <div className="relative flex flex-col items-end flex-shrink-0 w-full md:w-[110px] md:max-w-[110px] overflow-hidden p-0 md:text-right">
-                        {/* Desktop VALUE badge — inside odds container */}
-                        {isValue && (
-                            <div className="hidden md:block mb-1.5">
-                                <Badge variant="value">Value</Badge>
-                            </div>
-                        )}
-
+                    {/* RIGHT: Odds & Edge Block */}
+                    <div className={cn(
+                        "flex flex-col flex-shrink-0 min-w-[120px]",
+                        "items-start md:items-end",
+                        "pl-0 md:pl-4",
+                        "border-t border-[#1F2937]/30 pt-3 md:border-t-0 md:pt-0"
+                    )}>
                         {market.odds ? (
                             <>
-                                <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest block">
+                                <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest">
                                     Best Odds
                                 </span>
                                 <span className={cn(
-                                    "text-xl font-bold tabular-nums block",
+                                    "text-2xl font-bold tabular-nums leading-tight",
                                     isValue ? "text-emerald-400" : "text-white"
                                 )}>
                                     {market.odds.toFixed(2)}
                                 </span>
-                                <span className="text-[9px] font-medium text-neutral-500 block truncate max-w-full">
+                                <span className="text-[9px] font-medium text-neutral-500 truncate max-w-full">
                                     {market.bookmaker}
                                 </span>
                                 <span className={cn(
-                                    "text-[10px] font-bold mt-0.5 block",
+                                    "text-[10px] font-bold mt-0.5",
                                     isValue ? "text-emerald-400" : market.edge > 0 ? "text-amber-400" : "text-neutral-600"
                                 )}>
                                     {market.edge > 0 ? `+${edgePct}%` : `${edgePct}%`} edge
@@ -282,8 +278,8 @@ function MarketCard({ market, index }: { market: AnalysisMarket; index: number }
                     </div>
                 </div>
 
-                {/* Reasoning */}
-                <div className="mt-3 pt-3 border-t border-[#1F2937]/50">
+                {/* ── BOTTOM: Reasoning ── */}
+                <div className="pt-3 border-t border-[#1F2937]/50">
                     <p className="text-[11px] font-medium text-neutral-500 leading-relaxed italic">
                         {market.reasoning}
                     </p>
@@ -460,10 +456,10 @@ export function MatchAnalysisModal({
                                     <div className="flex items-center justify-between gap-3 md:gap-8">
                                         {/* Home Team */}
                                         <div className="flex-1 flex flex-col items-center gap-2 md:gap-3">
-                                            <div className="w-16 h-16 md:w-24 md:h-24 bg-[#111827] rounded-xl p-2 md:p-4 border border-[#1F2937] shadow-lg">
+                                            <div className="w-20 h-20 md:w-28 md:h-28 bg-[#111827] rounded-xl p-2 md:p-4 border border-[#1F2937] shadow-lg">
                                                 <img src={homeLogo} alt={homeTeam} className="w-full h-full object-contain" />
                                             </div>
-                                            <h2 className="text-xs md:text-base font-bold text-white tracking-tight text-center max-w-[100px] md:max-w-none line-clamp-2">
+                                            <h2 className="text-sm md:text-lg font-bold text-white tracking-tight text-center max-w-[100px] md:max-w-none line-clamp-2">
                                                 {homeTeam}
                                             </h2>
                                         </div>
@@ -484,10 +480,10 @@ export function MatchAnalysisModal({
 
                                         {/* Away Team */}
                                         <div className="flex-1 flex flex-col items-center gap-2 md:gap-3">
-                                            <div className="w-16 h-16 md:w-24 md:h-24 bg-[#111827] rounded-xl p-2 md:p-4 border border-[#1F2937] shadow-lg">
+                                            <div className="w-20 h-20 md:w-28 md:h-28 bg-[#111827] rounded-xl p-2 md:p-4 border border-[#1F2937] shadow-lg">
                                                 <img src={awayLogo} alt={awayTeam} className="w-full h-full object-contain" />
                                             </div>
-                                            <h2 className="text-xs md:text-base font-bold text-white tracking-tight text-center max-w-[100px] md:max-w-none line-clamp-2">
+                                            <h2 className="text-sm md:text-lg font-bold text-white tracking-tight text-center max-w-[100px] md:max-w-none line-clamp-2">
                                                 {awayTeam}
                                             </h2>
                                         </div>
@@ -495,7 +491,7 @@ export function MatchAnalysisModal({
                                         {/* Confidence Gauge — Desktop */}
                                         <div className="hidden lg:flex flex-col items-center">
                                             {data?.summary && (
-                                                <ConfidenceGauge value={data.summary.confidence} size={130} />
+                                                <ConfidenceGauge value={data.summary.confidence} size={140} />
                                             )}
                                         </div>
                                     </div>
@@ -503,7 +499,7 @@ export function MatchAnalysisModal({
                                     {/* Confidence Gauge — Mobile/Tablet */}
                                     <div className="flex lg:hidden justify-center mt-5">
                                         {data?.summary && (
-                                            <ConfidenceGauge value={data.summary.confidence} size={100} />
+                                            <ConfidenceGauge value={data.summary.confidence} size={110} />
                                         )}
                                     </div>
                                 </div>

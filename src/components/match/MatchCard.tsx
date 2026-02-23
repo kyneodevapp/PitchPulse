@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, Clock, Info, ShieldAlert, Star, Lock, Zap, Shield } from "lucide-react";
+import { TrendingUp, Clock, ShieldAlert, Star, Lock, Zap, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { MatchAnalysisModal } from "./MatchAnalysisModal";
@@ -141,21 +141,19 @@ export function MatchCard({
                             )}
                         </div>
 
-                        <div className="text-neutral-500 group-hover/card:text-neutral-300 transition-colors">
-                            <Info className="w-4 h-4" />
-                        </div>
+
                     </div>
 
                     {/* Teams Section - Redesigned 3-Column Grid */}
                     <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 mb-6 pb-6 border-b border-[#1F2937]/50">
                         {/* Home Team Column */}
                         <div className="flex flex-col items-center text-center w-full">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
                                 {!homeError && homeLogo ? (
                                     <img
                                         src={homeLogo}
                                         alt={homeTeam}
-                                        className="w-8 h-8 sm:w-10 sm:h-10 object-contain p-1"
+                                        className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 object-contain p-1"
                                         onError={() => setHomeError(true)}
                                     />
                                 ) : (
@@ -163,25 +161,25 @@ export function MatchCard({
                                 )}
                             </div>
                             <div className="min-h-[2.5rem] flex items-start justify-center w-full">
-                                <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
+                                <h3 className="text-sm sm:text-base lg:text-base font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
                                     {homeTeam}
                                 </h3>
                             </div>
                         </div>
 
                         {/* Middle Column (VS) */}
-                        <div className="flex items-center justify-center h-12 sm:h-14 px-2">
+                        <div className="flex items-center justify-center h-14 sm:h-16 lg:h-20 px-2">
                             <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">VS</span>
                         </div>
 
                         {/* Away Team Column */}
                         <div className="flex flex-col items-center text-center w-full">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
                                 {!awayError && awayLogo ? (
                                     <img
                                         src={awayLogo}
                                         alt={awayTeam}
-                                        className="w-8 h-8 sm:w-10 sm:h-10 object-contain p-1"
+                                        className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 object-contain p-1"
                                         onError={() => setAwayError(true)}
                                     />
                                 ) : (
@@ -189,7 +187,7 @@ export function MatchCard({
                                 )}
                             </div>
                             <div className="min-h-[2.5rem] flex items-start justify-center w-full">
-                                <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
+                                <h3 className="text-sm sm:text-base lg:text-base font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
                                     {awayTeam}
                                 </h3>
                             </div>
@@ -216,7 +214,7 @@ export function MatchCard({
                                     <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
                                         Market
                                     </span>
-                                    <span className="text-sm sm:text-base font-bold text-white uppercase truncate max-w-[120px]">
+                                    <span className="text-xs sm:text-sm lg:text-base font-bold text-white uppercase line-clamp-2 max-w-[200px] sm:max-w-[240px]">
                                         {prediction}
                                     </span>
                                 </div>
