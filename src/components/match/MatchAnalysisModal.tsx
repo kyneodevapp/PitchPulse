@@ -200,7 +200,7 @@ export function MatchAnalysisModal({
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 16 }}
                             transition={{ duration: 0.3 }}
-                            className="relative w-full max-w-6xl h-[calc(100vh-1rem)] md:h-auto md:max-h-[95vh] bg-[#0B0F14] border border-[#1F2937] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col overscroll-none"
+                            className="relative w-full max-w-6xl h-[calc(100dvh-0.5rem)] md:h-auto md:max-h-[90vh] bg-[#0B0F14] border border-[#1F2937] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col overscroll-none"
                         >
                             {/* Close Button */}
                             <button
@@ -227,10 +227,10 @@ export function MatchAnalysisModal({
                                                 {/* Team logos & Info */}
                                                 <div className="flex-1 flex items-center justify-center gap-8 md:gap-16">
                                                     <div className="flex flex-col items-center gap-4">
-                                                        <div className="w-16 h-16 md:w-32 md:h-32 bg-[#111827] rounded-xl p-3 md:p-6 border border-[#1F2937] shadow-xl relative">
+                                                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-[#111827] rounded-xl p-2 sm:p-4 md:p-6 border border-[#1F2937] shadow-xl relative">
                                                             <img src={homeLogo} alt={homeTeam} className="w-full h-full object-contain relative" />
                                                         </div>
-                                                        <h2 className="text-lg md:text-2xl font-bold text-white tracking-tight text-center max-w-[140px] md:max-w-none line-clamp-2">
+                                                        <h2 className="text-sm sm:text-lg md:text-2xl font-bold text-white tracking-tight text-center max-w-[100px] sm:max-w-[140px] md:max-w-none line-clamp-2">
                                                             {homeTeam}
                                                         </h2>
                                                     </div>
@@ -243,10 +243,10 @@ export function MatchAnalysisModal({
                                                     </div>
 
                                                     <div className="flex flex-col items-center gap-4">
-                                                        <div className="w-16 h-16 md:w-32 md:h-32 bg-[#111827] rounded-xl p-3 md:p-6 border border-[#1F2937] shadow-xl relative">
+                                                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-[#111827] rounded-xl p-2 sm:p-4 md:p-6 border border-[#1F2937] shadow-xl relative">
                                                             <img src={awayLogo} alt={awayTeam} className="w-full h-full object-contain relative" />
                                                         </div>
-                                                        <h2 className="text-lg md:text-2xl font-bold text-white tracking-tight text-center max-w-[140px] md:max-w-none line-clamp-2">
+                                                        <h2 className="text-sm sm:text-lg md:text-2xl font-bold text-white tracking-tight text-center max-w-[100px] sm:max-w-[140px] md:max-w-none line-clamp-2">
                                                             {awayTeam}
                                                         </h2>
                                                     </div>
@@ -425,10 +425,11 @@ export function MatchAnalysisModal({
                             )}
                         </motion.div>
                     </div>
-                )}
+                )
+                }
                 {isOpen && <ToastContainer toasts={toasts} />}
-            </AnimatePresence>
-        </div>
+            </AnimatePresence >
+        </div >
     );
 
     return createPortal(modalContent, document.body);

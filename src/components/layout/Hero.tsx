@@ -6,7 +6,7 @@ import { ArrowLeftRight, Zap, Target, TrendingUp } from "lucide-react";
 export function Hero() {
     return (
         <div className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden bg-[#0B0F14]">
-            <div className="container mx-auto px-4 relative z-10">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="max-w-4xl mx-auto text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -16,7 +16,7 @@ export function Hero() {
                         <span className="inline-block px-4 py-1.5 mb-6 text-[10px] font-bold tracking-[0.2em] text-[#FBBF24] uppercase bg-[#111827] border border-[#1F2937] rounded-lg">
                             AI-Powered Match Analysis
                         </span>
-                        <h1 className="text-5xl md:text-8xl font-bold mb-8 tracking-tighter text-white leading-none">
+                        <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold mb-8 tracking-tighter text-white leading-[1.1] md:leading-none">
                             Predict the Game with <br />
                             <span className="text-[#FBBF24]">
                                 Surgical Precision
@@ -41,7 +41,7 @@ export function Hero() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.1 }}
-                        className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4"
+                        className="mt-20 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4"
                     >
                         {[
                             { label: "Win Rate", value: "84%", icon: Target },

@@ -190,7 +190,7 @@ export function MatchCard({
                                     <ShieldAlert className="w-6 h-6 text-neutral-600" />
                                 )}
                             </div>
-                            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-white tracking-tight line-clamp-2 leading-tight">
+                            <h3 className="text-sm sm:text-xl lg:text-2xl font-bold text-white tracking-tight line-clamp-2 leading-tight">
                                 {homeTeam}
                             </h3>
                         </div>
@@ -213,7 +213,7 @@ export function MatchCard({
                                     <ShieldAlert className="w-6 h-6 text-neutral-600" />
                                 )}
                             </div>
-                            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-white tracking-tight line-clamp-2 leading-tight">
+                            <h3 className="text-sm sm:text-xl lg:text-2xl font-bold text-white tracking-tight line-clamp-2 leading-tight">
                                 {awayTeam}
                             </h3>
                         </div>

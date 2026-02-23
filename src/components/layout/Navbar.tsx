@@ -21,7 +21,7 @@ export function Navbar() {
 
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-[#1F2937] bg-[#0B0F14]">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                     <Link href="/" className="group">
                         <BrandLogo showText={true} />
