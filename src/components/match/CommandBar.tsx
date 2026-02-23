@@ -85,7 +85,7 @@ export function CommandBar({
                                                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Select Terminal Date</span>
                                             </div>
                                             <div className="max-h-64 overflow-y-auto no-scrollbar">
-                                                {availableDates.map((date) => (
+                                                {availableDates.map((date, index) => (
                                                     <button
                                                         key={date}
                                                         onClick={() => {
@@ -97,7 +97,12 @@ export function CommandBar({
                                                             selectedDate === date ? "text-[#FBBF24] bg-[#0B0F14]" : "text-neutral-400 hover:text-white hover:bg-[#1F2937]"
                                                         )}
                                                     >
-                                                        {date}
+                                                        <div className="flex items-center gap-2">
+                                                            {date}
+                                                            {index === 0 && (
+                                                                <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-500 uppercase border border-emerald-500/20">Today</span>
+                                                            )}
+                                                        </div>
                                                         {selectedDate === date && <Check className="w-3.5 h-3.5" />}
                                                     </button>
                                                 ))}

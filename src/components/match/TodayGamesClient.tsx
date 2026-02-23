@@ -26,6 +26,13 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
     const [activeLeagueId, setActiveLeagueId] = useState<number | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+    // Generate full 11-day range starting from today (today + next 10 days)
+    const availableDates = Array.from({ length: 11 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        return d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' });
+    });
+
     // Grouping by Date
     const groupedByDate = initialMatches.reduce((acc, match) => {
         const date = match.date;
@@ -34,21 +41,16 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
         return acc;
     }, {} as Record<string, Match[]>);
 
-    const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
-        return new Date(groupedByDate[a][0].start_time).getTime() - new Date(groupedByDate[b][0].start_time).getTime();
-    });
-
     useEffect(() => {
-        if (sortedDates.length > 0 && !selectedDate) {
-            setSelectedDate(sortedDates[0]);
+        if (!selectedDate && availableDates.length > 0) {
+            setSelectedDate(availableDates[0]);
         }
-    }, [sortedDates, selectedDate]);
+    }, [availableDates, selectedDate]);
 
     const handleDateChange = (dateStr: string) => {
         setSelectedDate(dateStr);
         const element = document.getElementById(`date-section-${dateStr.replace(/\s+/g, '-')}`);
         if (element) {
-            // New offset for single-row command bar
             const yOffset = -140;
             const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
             window.scrollTo({ top: y, behavior: 'smooth' });
@@ -60,7 +62,7 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
             <CommandBar
                 selectedDate={selectedDate || ""}
                 onDateChange={handleDateChange}
-                availableDates={sortedDates}
+                availableDates={availableDates}
                 activeLeagueId={activeLeagueId}
                 onLeagueChange={setActiveLeagueId}
                 leagues={SUPPORTED_LEAGUES}
@@ -74,13 +76,11 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-24"
                 >
-                    {sortedDates.map((dateStr) => {
-                        const dateMatches = groupedByDate[dateStr];
+                    {availableDates.map((dateStr) => {
+                        const dateMatches = groupedByDate[dateStr] || [];
                         const filteredMatches = activeLeagueId
                             ? dateMatches.filter(m => m.league_id === activeLeagueId)
                             : dateMatches;
-
-                        if (filteredMatches.length === 0) return null;
 
                         return (
                             <div
@@ -88,40 +88,45 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                                 id={`date-section-${dateStr.replace(/\s+/g, '-')}`}
                                 className="scroll-mt-64 space-y-8"
                             >
-                                {SUPPORTED_LEAGUES.map((league) => {
-                                    const leagueMatches = filteredMatches.filter(m => m.league_id === league.id);
-                                    if (leagueMatches.length === 0) return null;
+                                {filteredMatches.length > 0 ? (
+                                    SUPPORTED_LEAGUES.map((league) => {
+                                        const leagueMatches = filteredMatches.filter(m => m.league_id === league.id);
+                                        if (leagueMatches.length === 0) return null;
 
-                                    return (
-                                        <div key={league.id} className="space-y-6">
-                                            <div className="flex items-center gap-4">
-                                                <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em]">{league.name}</h4>
-                                                <div className="flex-1 h-[1px] bg-[#1F2937]" />
+                                        return (
+                                            <div key={league.id} className="space-y-6">
+                                                <div className="flex items-center gap-4">
+                                                    <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em]">{league.name}</h4>
+                                                    <div className="flex-1 h-[1px] bg-[#1F2937]" />
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                                    {leagueMatches.map((m) => (
+                                                        <MatchCard
+                                                            key={m.id}
+                                                            id={m.id}
+                                                            homeTeam={m.home_team}
+                                                            awayTeam={m.away_team}
+                                                            homeLogo={m.home_logo}
+                                                            awayLogo={m.away_logo}
+                                                            leagueName={league.name}
+                                                            prediction={m.prediction || ""}
+                                                            confidence={m.confidence || 0}
+                                                            time={new Date(m.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            date={m.date}
+                                                            isLive={m.is_live}
+                                                            isLocked={m.is_locked}
+                                                        />
+                                                    ))}
+                                                </div>
                                             </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                                {leagueMatches.map((m) => (
-                                                    <MatchCard
-                                                        key={m.id}
-                                                        id={m.id}
-                                                        homeTeam={m.home_team}
-                                                        awayTeam={m.away_team}
-                                                        homeLogo={m.home_logo}
-                                                        awayLogo={m.away_logo}
-                                                        leagueName={league.name}
-                                                        prediction={m.prediction || ""}
-                                                        confidence={m.confidence || 0}
-                                                        time={new Date(m.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        date={m.date}
-                                                        isLive={m.is_live}
-                                                        isLocked={m.is_locked}
-                                                    />
-
-                                                ))}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })
+                                ) : (
+                                    <div className="py-12 px-6 rounded-xl border border-dashed border-[#1F2937] text-center">
+                                        <p className="text-sm font-medium text-neutral-500">No predictions scheduled for this date.</p>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
