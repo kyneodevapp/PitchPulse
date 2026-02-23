@@ -22,6 +22,16 @@ export interface Match {
     best_bookmaker?: string | null;
     candidates?: PredictionCandidate[];
     is_locked?: boolean;
+    // Engine v2 fields
+    tier?: 'elite' | 'safe';
+    ev_adjusted?: number;
+    edge?: number;
+    odds?: number;
+    lambda_home?: number;
+    lambda_away?: number;
+    probability?: number;
+    market_id?: string;
+    checksum?: string;
 }
 
 
@@ -713,9 +723,12 @@ class SportMonksService {
             .slice(0, 7);
     }
 
-    // ============ FIXTURES ============
+    // ============ FIXTURES (Engine v2) ============
 
     async getFixtures(days: number = 10): Promise<Match[]> {
+        const { processMatch, toMatchPrediction, publishPrediction } = await import('@/lib/engine/engine');
+        const { PredictionHistory } = await import('@/lib/engine/history');
+
         const now = new Date();
         const startDate = now.toISOString().split('T')[0];
         const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -728,9 +741,7 @@ class SportMonksService {
         if (allFixtures.length === 0) return [];
 
         // FILTER: Remove finished games (5=FT, 7=AET, 8=PENS) from the "Upcoming" view
-        // We only want Scheduled, Live (INPLAY), or Delayed games here.
         const activeFixtures = allFixtures.filter((f: any) => ![5, 7, 8].includes(f.state_id));
-
         if (activeFixtures.length === 0) return [];
 
         // Collect unique season IDs and fetch standings
@@ -741,7 +752,7 @@ class SportMonksService {
             stats.forEach((v, k) => allTeamStats.set(k, v));
         }
 
-        return Promise.all(activeFixtures.map(async (f: any) => {
+        const results = await Promise.all(activeFixtures.map(async (f: any) => {
             const homeP = f.participants.find((p: any) => p.meta.location === "home");
             const awayP = f.participants.find((p: any) => p.meta.location === "away");
             const home = homeP?.name || "Home Team";
@@ -755,24 +766,117 @@ class SportMonksService {
                 awayP?.id ? this.getTeamForm(awayP.id) : Promise.resolve(undefined)
             ]);
 
-            const cached = await PredictionStore.get(f.id);
-            const bestBet = cached?.mainPrediction || this.calculateBestPrediction(
-                f.id, home, away, homeStats, awayStats, homeForm, awayForm
-            );
-
-            // AUTO-SAVE to cache if not already present to "lock in" the prediction for history
-            if (!cached) {
-                // We don't await this to avoid blocking the UI, but it will fire off the save
-                PredictionStore.save(f.id, {
-                    mainPrediction: bestBet,
-                    markets: bestBet.candidates?.map((c: any) => ({
-                        prediction: c.outcome,
-                        probability: Math.round(c.probability),
-                        confidenceLevel: c.probability >= 80 ? "High" : (c.probability <= 60 ? "Low" : "Medium")
-                    })) || []
-                }).catch(e => console.error("Auto-save failed:", e));
+            // Check immutable history first
+            const existing = await PredictionHistory.get(f.id);
+            if (existing) {
+                return {
+                    id: f.id,
+                    home_team: home,
+                    away_team: away,
+                    home_logo: homeP?.image_path || "",
+                    away_logo: awayP?.image_path || "",
+                    start_time: f.starting_at,
+                    league_name: f.league?.name || "League",
+                    league_id: f.league_id,
+                    date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
+                    is_live: f.status === "LIVE" || f.status === "INPLAY",
+                    prediction: existing.market,
+                    confidence: existing.confidence,
+                    is_locked: true,
+                    tier: existing.tier as 'elite' | 'safe',
+                    ev_adjusted: existing.ev_adjusted,
+                    edge: existing.edge,
+                    odds: existing.odds,
+                    bet365_odds: existing.bet365_odds,
+                    best_bookmaker: existing.best_bookmaker,
+                    lambda_home: existing.lambda_home,
+                    lambda_away: existing.lambda_away,
+                    probability: existing.p_model,
+                    market_id: existing.market_id,
+                    checksum: existing.checksum,
+                } as Match;
             }
 
+            // Run through engine v2 pipeline
+            const odds = await this.fetchFixtureOdds(f.id);
+            const engineResult = processMatch({
+                fixtureId: f.id,
+                homeTeam: home,
+                awayTeam: away,
+                homeLogo: homeP?.image_path || "",
+                awayLogo: awayP?.image_path || "",
+                leagueName: f.league?.name || "League",
+                leagueId: f.league_id,
+                startTime: f.starting_at,
+                date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
+                isLive: f.status === "LIVE" || f.status === "INPLAY",
+                homeAvgScored: homeStats?.avgScored,
+                homeAvgConceded: homeStats?.avgConceded,
+                awayAvgScored: awayStats?.avgScored,
+                awayAvgConceded: awayStats?.avgConceded,
+                homeRank: homeStats?.rank,
+                awayRank: awayStats?.rank,
+                homeGamesPlayed: homeStats?.gamesPlayed,
+                awayGamesPlayed: awayStats?.gamesPlayed,
+                homeFormScored: homeForm?.avgScored,
+                homeFormConceded: homeForm?.avgConceded,
+                homeFormPPG: homeForm?.ppg,
+                awayFormScored: awayForm?.avgScored,
+                awayFormConceded: awayForm?.avgConceded,
+                awayFormPPG: awayForm?.ppg,
+            }, odds);
+
+            // Pick Elite if available, otherwise Safe
+            const bestPick = engineResult.elite || engineResult.safe;
+
+            if (bestPick) {
+                const prediction = toMatchPrediction(
+                    {
+                        fixtureId: f.id, homeTeam: home, awayTeam: away,
+                        homeLogo: homeP?.image_path || "", awayLogo: awayP?.image_path || "",
+                        leagueName: f.league?.name || "League", leagueId: f.league_id,
+                        startTime: f.starting_at,
+                        date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
+                        isLive: f.status === "LIVE" || f.status === "INPLAY",
+                    },
+                    bestPick,
+                    engineResult.lambdaHome,
+                    engineResult.lambdaAway,
+                    false,
+                );
+
+                // Publish to immutable history (fire-and-forget)
+                publishPrediction(prediction).catch(e => console.error('[Engine] Publish failed:', e));
+
+                return {
+                    id: f.id,
+                    home_team: home,
+                    away_team: away,
+                    home_logo: homeP?.image_path || "",
+                    away_logo: awayP?.image_path || "",
+                    start_time: f.starting_at,
+                    league_name: f.league?.name || "League",
+                    league_id: f.league_id,
+                    date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
+                    is_live: f.status === "LIVE" || f.status === "INPLAY",
+                    prediction: bestPick.label,
+                    confidence: bestPick.confidence,
+                    is_locked: true,
+                    tier: bestPick.tier as 'elite' | 'safe',
+                    ev_adjusted: bestPick.evAdjusted,
+                    edge: bestPick.edge,
+                    odds: bestPick.odds,
+                    bet365_odds: bestPick.bet365Odds,
+                    best_bookmaker: bestPick.bestBookmaker,
+                    lambda_home: engineResult.lambdaHome,
+                    lambda_away: engineResult.lambdaAway,
+                    probability: bestPick.probability,
+                    market_id: bestPick.marketId,
+                } as Match;
+            }
+
+            // Fallback: No qualifying market found — use legacy calculation for display
+            const legacyBet = this.calculateBestPrediction(f.id, home, away, homeStats, awayStats, homeForm, awayForm);
             return {
                 id: f.id,
                 home_team: home,
@@ -784,22 +888,21 @@ class SportMonksService {
                 league_id: f.league_id,
                 date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
                 is_live: f.status === "LIVE" || f.status === "INPLAY",
-                prediction: bestBet.outcome,
-                confidence: bestBet.confidence,
-                candidates: bestBet.candidates,
-                // Only "Lock" if it's from a manual correction or a known verified cache
-                // Don't lock "Initial" predictions yet to allow UI to show value bets
-                is_locked: !!MANUAL_CORRECTIONS[f.id] || (!!cached && cached.summary !== "Initial automated prediction"),
-            };
-
-
-
+                prediction: legacyBet.outcome,
+                confidence: legacyBet.confidence,
+                candidates: legacyBet.candidates,
+                is_locked: false,
+                tier: 'safe' as const,
+            } as Match;
         }));
+
+        return results;
     }
 
     async getPastFixtures(days: number = 3): Promise<PastMatch[]> {
+        const { PredictionHistory } = await import('@/lib/engine/history');
+
         const now = new Date();
-        // Shift end date to TODAY so we catch games that just finished an hour ago
         const endDate = now.toISOString().split('T')[0];
         const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -810,7 +913,7 @@ class SportMonksService {
 
         if (allFixtures.length === 0) return [];
 
-        // Collect unique season IDs and fetch standings
+        // Collect unique season IDs and fetch standings (for fallback only)
         const seasonIds = [...new Set(allFixtures.map((f: any) => f.season_id).filter(Boolean))];
         const allTeamStats = new Map<number, TeamStats>();
         for (const sid of seasonIds) {
@@ -828,38 +931,55 @@ class SportMonksService {
                 const homeStats = allTeamStats.get(homeP?.id);
                 const awayStats = allTeamStats.get(awayP?.id);
 
-                // Fetch form (cached)
-                const [homeForm, awayForm] = await Promise.all([
-                    homeP?.id ? this.getTeamForm(homeP.id) : Promise.resolve(undefined),
-                    awayP?.id ? this.getTeamForm(awayP.id) : Promise.resolve(undefined)
-                ]);
-
                 const homeScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "home")?.score?.goals ?? 0;
                 const awayScore = f.scores?.find((s: any) => s.description === "CURRENT" && s.score.participant === "away")?.score?.goals ?? 0;
 
+                // Priority 1: Read from immutable_predictions (Engine v2)
+                const immutable = await PredictionHistory.get(f.id);
+                if (immutable) {
+                    const hit = this.evaluatePrediction(immutable.market, homeScore, awayScore, home, away);
+
+                    // Freeze prediction with result if not already frozen
+                    if (!immutable.is_frozen) {
+                        const result = hit ? 'WIN' : 'LOSS';
+                        const profitLoss = hit ? (immutable.odds - 1) : -1;
+                        PredictionHistory.freeze(f.id, result, profitLoss).catch(e => console.error('[History] Freeze failed:', e));
+                    }
+
+                    return {
+                        id: f.id,
+                        home_team: home,
+                        away_team: away,
+                        home_logo: homeP?.image_path || "",
+                        away_logo: awayP?.image_path || "",
+                        start_time: f.starting_at,
+                        league_name: f.league?.name || "League",
+                        league_id: f.league_id,
+                        date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
+                        is_live: false,
+                        prediction: immutable.market,
+                        confidence: immutable.confidence,
+                        home_score: homeScore,
+                        away_score: awayScore,
+                        status: "FT",
+                        prediction_hit: hit,
+                        is_locked: true,
+                        tier: immutable.tier as 'elite' | 'safe',
+                        ev_adjusted: immutable.ev_adjusted,
+                        edge: immutable.edge,
+                        odds: immutable.odds,
+                        bet365_odds: immutable.bet365_odds,
+                        best_bookmaker: immutable.best_bookmaker,
+                        checksum: immutable.checksum,
+                    } as PastMatch;
+                }
+
+                // Priority 2: Legacy predictions_cache (for pre-engine-v2 data)
                 const cached = await PredictionStore.get(f.id);
+                const bestBet = cached?.mainPrediction || this.calculateBestPrediction(f.id, home, away, homeStats, awayStats);
 
-                // DIAGNOSTIC LOG (TEMPORARY)
-                if (home.includes("Getafe") || home.includes("Gijón")) {
-                    console.log(`[HISTORY_FIX] Processing ${home} vs ${away} (ID: ${f.id}). Cached: ${!!cached}`);
-                }
-
-                // IMPORTANT: For past fixtures, we MUST prioritize the cached prediction.
-                // If not in cache, we fall back to calculation, but this is less ideal.
-                const bestBet = cached?.mainPrediction || this.calculateBestPrediction(f.id, home, away, homeStats, awayStats, homeForm, awayForm);
-
-                // FAIL-SAFE: Force manual outcomes if the cache retrieval is failing/drifting
-                let outcome = bestBet.outcome;
-                let confidence = bestBet.confidence;
-
-                if (home.includes("Getafe") && away.includes("Sevilla")) {
-                    outcome = "Over 1.5 Goals";
-                    confidence = 70;
-                } else if (home.includes("Sporting Gijón")) {
-                    outcome = "Over 2.5 Goals";
-                    confidence = 49;
-                }
-
+                const outcome = bestBet.outcome;
+                const confidence = bestBet.confidence;
                 const hit = this.evaluatePrediction(outcome, homeScore, awayScore, home, away);
 
                 return {
@@ -880,11 +1000,8 @@ class SportMonksService {
                     away_score: awayScore,
                     status: "FT",
                     prediction_hit: hit,
-                    is_locked: true, // Force locked for these specific fixed games
-                };
-
-
-
+                    is_locked: true,
+                } as PastMatch;
             }));
     }
 

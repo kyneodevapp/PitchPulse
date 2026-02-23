@@ -116,6 +116,10 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                                                             date={m.date}
                                                             isLive={m.is_live}
                                                             isLocked={m.is_locked}
+                                                            tier={m.tier}
+                                                            odds={m.odds}
+                                                            evAdjusted={m.ev_adjusted}
+                                                            edge={m.edge}
                                                         />
                                                     ))}
                                                 </div>

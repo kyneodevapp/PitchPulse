@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sportmonksService, PredictionStore } from "@/lib/services/prediction";
+import { sportmonksService } from "@/lib/services/prediction";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -13,35 +13,12 @@ export async function GET(request: Request) {
     }
 
     try {
+        // Engine v2: Odds route is now READ-ONLY (no prediction overrides)
         if (prediction) {
-            const cached = await PredictionStore.get(fixtureId);
-            const main = cached?.mainPrediction;
-
             const rawOdds = await sportmonksService.getOddsForPrediction(
                 fixtureId, prediction, homeTeam, awayTeam
             );
-
-            // Calculate Value Bet if we have team names
-            let valueBet = null;
-            if (homeTeam && awayTeam) {
-                // If we have a cached result, use its candidates to ensure consistency
-                const candidates = main?.candidates || sportmonksService.calculateBestPrediction(fixtureId, homeTeam, awayTeam).candidates;
-
-                if (candidates) {
-                    valueBet = await sportmonksService.calculateValueBet(fixtureId, candidates, homeTeam, awayTeam);
-
-                    // If we have a cached main prediction, ensure the suggestedBet outcomes match if possible
-                    // or at least prioritize the cached outcome if it's a high-confidence one.
-                    if (main && !valueBet.isElite) {
-                        // Optional: further logic to stick to 'main.outcome' if it's still valid
-                    }
-                }
-            }
-
-            return NextResponse.json({
-                ...rawOdds,
-                suggestedBet: valueBet
-            });
+            return NextResponse.json(rawOdds);
         } else {
             const odds = await sportmonksService.getOddsComparison(fixtureId);
             return NextResponse.json({ all: odds, bet365: null, best: odds[0] || null });

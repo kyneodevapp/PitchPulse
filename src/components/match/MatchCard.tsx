@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, Clock, Info, ShieldAlert, Star, AlertCircle, Lock } from "lucide-react";
+import { TrendingUp, Clock, Info, ShieldAlert, Star, Lock, Zap, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { MatchAnalysisModal } from "./MatchAnalysisModal";
@@ -19,6 +19,11 @@ interface MatchCardProps {
     date: string;
     isLive?: boolean;
     isLocked?: boolean;
+    // Engine v2 fields
+    tier?: 'elite' | 'safe';
+    odds?: number;
+    evAdjusted?: number;
+    edge?: number;
 }
 
 
@@ -35,22 +40,29 @@ export function MatchCard({
     date,
     isLive,
     isLocked,
+    tier = 'safe',
+    odds,
+    evAdjusted,
+    edge,
 }: MatchCardProps) {
     const [homeError, setHomeError] = useState(false);
     const [awayError, setAwayError] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [bet365Odds, setBet365Odds] = useState<number | null>(null);
+    const [bet365Odds, setBet365Odds] = useState<number | null>(odds || null);
     const [bestBookmaker, setBestBookmaker] = useState<{ odds: number; name: string } | null>(null);
-    const [dynamicPrediction, setDynamicPrediction] = useState(prediction);
-    const [dynamicConfidence, setDynamicConfidence] = useState(confidence);
-    const [isPrime, setIsPrime] = useState(false);
-    const [isElite, setIsElite] = useState(false);
-    const [expectedValue, setExpectedValue] = useState<number>(0);
-    const [starRating, setStarRating] = useState<number>(0);
-    const [kellyStake, setKellyStake] = useState<number>(0);
 
-    // Fetch odds lazily on mount
+    const isEliteTier = tier === 'elite';
+
+    // Tier-specific colors
+    const tierAccent = isEliteTier ? '#FBBF24' : '#3B82F6'; // Gold vs Blue
+    const tierGlow = isEliteTier ? 'shadow-amber-500/10' : 'shadow-blue-500/10';
+    const tierBorder = isEliteTier ? 'border-amber-400/30 hover:border-amber-400/60' : 'border-blue-400/20 hover:border-blue-400/50';
+    const tierBg = isEliteTier ? 'bg-amber-400/5' : 'bg-blue-400/5';
+
+    // Fetch odds lazily on mount (READ ONLY — no prediction overrides)
     useEffect(() => {
+        if (odds) return; // Already have odds from engine
+
         const fetchOdds = async () => {
             try {
                 const params = new URLSearchParams({
@@ -62,65 +74,9 @@ export function MatchCard({
                 const resp = await fetch(`/api/odds?${params}`);
                 if (resp.ok) {
                     const data = await resp.json();
-
-                    // If isLocked is true, we ONLY care about the odds.
-                    // We strictly DO NOT want to override the prediction outcome or confidence.
-                    if (isLocked) {
-                        if (data.bet365) setBet365Odds(data.bet365);
-                        if (data.best && data.best.bookmaker !== "bet365") {
-                            setBestBookmaker({ odds: data.best.odds, name: data.best.bookmaker });
-                        }
-                        return;
-                    }
-
-                    // If we have a value-optimized suggestBet, use IT for everything
-                    if (data.suggestedBet) {
-                        setDynamicPrediction(data.suggestedBet.outcome);
-                        setDynamicConfidence(data.suggestedBet.confidence);
-                        setIsPrime(!!data.suggestedBet.isPrime);
-                        setIsElite(!!data.suggestedBet.isElite);
-                        setExpectedValue(data.suggestedBet.expectedValue || 0);
-                        setBet365Odds(data.suggestedBet.bet365 || data.suggestedBet.odds || null);
-                        setStarRating(data.suggestedBet.starRating || 0);
-                        setKellyStake(data.suggestedBet.kellyStake || 0);
-
-                        // Handle best bookmaker for the NEW prediction
-                        if (data.suggestedBet.best && data.suggestedBet.best.bookmaker !== "bet365") {
-                            setBestBookmaker({
-                                odds: data.suggestedBet.best.odds,
-                                name: data.suggestedBet.best.bookmaker
-                            });
-                        } else {
-                            setBestBookmaker(null);
-                        }
-
-                        // IMPORTANT: Save this upgraded prediction to persistence so History uses IT
-                        // Only save if it wasn't already locked with this outcome
-                        if (!isLocked) {
-                            import("@/lib/services/prediction").then(({ PredictionStore }) => {
-                                PredictionStore.save(id, {
-                                    mainPrediction: {
-                                        outcome: data.suggestedBet.outcome,
-                                        confidence: data.suggestedBet.confidence,
-                                        isPrime: !!data.suggestedBet.isPrime,
-                                        isElite: !!data.suggestedBet.isElite,
-                                        starRating: data.suggestedBet.starRating,
-                                        kellyStake: data.suggestedBet.kellyStake,
-                                        candidates: data.suggestedBet.candidates
-                                    },
-                                    summary: "Value-optimized automated prediction",
-                                    markets: data.markets,
-                                    signals: data.signals
-                                });
-                            });
-                        }
-                    } else {
-
-                        // Fallback to original prediction odds
-                        if (data.bet365) setBet365Odds(data.bet365);
-                        if (data.best && data.best.bookmaker !== "bet365") {
-                            setBestBookmaker({ odds: data.best.odds, name: data.best.bookmaker });
-                        }
+                    if (data.bet365) setBet365Odds(data.bet365);
+                    if (data.best && data.best.bookmaker !== "bet365") {
+                        setBestBookmaker({ odds: data.best.odds, name: data.best.bookmaker });
                     }
                 }
             } catch {
@@ -128,7 +84,7 @@ export function MatchCard({
             }
         };
         fetchOdds();
-    }, [id, prediction, homeTeam, awayTeam, isLocked]);
+    }, [id, prediction, homeTeam, awayTeam, odds]);
 
 
     return (
@@ -137,11 +93,15 @@ export function MatchCard({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-[#111827] rounded-xl overflow-hidden border border-[#1F2937] hover:border-amber-400/50 transition-colors duration-200 flex flex-col h-full cursor-pointer group/card shadow-lg"
+                className={cn(
+                    "bg-[#111827] rounded-xl overflow-hidden border transition-colors duration-200 flex flex-col h-full cursor-pointer group/card shadow-lg",
+                    tierBorder,
+                    tierGlow
+                )}
                 onClick={() => setIsModalOpen(true)}
             >
                 <div className="p-6 flex-1 flex flex-col">
-                    {/* Header: Status & Time */}
+                    {/* Header: Status, Time & Tier Badge */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                             <div className={cn(
@@ -161,10 +121,22 @@ export function MatchCard({
                                 )}
                             </div>
 
+                            {/* Tier Badge */}
+                            {isEliteTier ? (
+                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-amber-400/15 border border-amber-400/30 text-amber-400 text-[9px] font-bold uppercase tracking-widest">
+                                    <Zap className="w-2.5 h-2.5" />
+                                    Elite
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-400/10 border border-blue-400/20 text-blue-400 text-[9px] font-bold uppercase tracking-widest">
+                                    <Shield className="w-2.5 h-2.5" />
+                                    Safe
+                                </div>
+                            )}
+
                             {isLocked && (
-                                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[9px] font-bold uppercase tracking-widest shadow-sm">
-                                    <Lock className="w-2.5 h-2.5" />
-                                    Locked
+                                <div className="flex items-center gap-1 px-1.5 py-1 rounded bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[9px]">
+                                    <Lock className="w-2 h-2" />
                                 </div>
                             )}
                         </div>
@@ -229,25 +201,23 @@ export function MatchCard({
                         {/* Signal & Odds */}
                         <div className="flex items-end justify-between pt-0">
                             <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-1 mb-1">
-                                    {[...Array(5)].map((_, i) => (
-                                        <Star
-                                            key={i}
-                                            className={cn(
-                                                "w-3 h-3",
-                                                i < (starRating / 2)
-                                                    ? "text-[#FBBF24] fill-[#FBBF24]"
-                                                    : "text-neutral-800"
-                                            )}
-                                        />
-                                    ))}
-                                </div>
+                                {/* EV Badge (Engine v2) */}
+                                {evAdjusted !== undefined && evAdjusted > 0 && (
+                                    <div className={cn(
+                                        "flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold mb-1",
+                                        isEliteTier
+                                            ? "bg-amber-400/10 text-amber-400 border border-amber-400/20"
+                                            : "bg-blue-400/10 text-blue-400 border border-blue-400/20"
+                                    )}>
+                                        +{(evAdjusted * 100).toFixed(1)}% EV
+                                    </div>
+                                )}
                                 <div className="flex flex-col">
                                     <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
                                         Market
                                     </span>
                                     <span className="text-sm sm:text-base font-bold text-white uppercase truncate max-w-[120px]">
-                                        {dynamicPrediction}
+                                        {prediction}
                                     </span>
                                 </div>
                             </div>
@@ -256,34 +226,46 @@ export function MatchCard({
                                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
                                     Odds
                                 </span>
-                                <div className="text-xl sm:text-2xl font-bold text-[#FBBF24]">
+                                <div className={cn(
+                                    "text-xl sm:text-2xl font-bold",
+                                    isEliteTier ? "text-[#FBBF24]" : "text-blue-400"
+                                )}>
                                     {bet365Odds ? `@${bet365Odds.toFixed(2)}` : "—"}
                                 </div>
                             </div>
                         </div>
 
                         {/* Confidence Indicator */}
-                        <div className="flex items-center justify-between p-3 bg-[#0B0F14] rounded-lg border border-[#1F2937]">
+                        <div className={cn(
+                            "flex items-center justify-between p-3 rounded-lg border",
+                            tierBg,
+                            isEliteTier ? "border-amber-400/10" : "border-blue-400/10"
+                        )}>
                             <div className="flex flex-col">
                                 <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
                                     Confidence
                                 </span>
                                 <div className="text-xl sm:text-2xl font-bold text-white">
-                                    {dynamicConfidence}%
+                                    {confidence}%
                                 </div>
                             </div>
                             <div className="text-right">
                                 <span className={cn(
                                     "px-2 py-1 rounded text-[10px] font-bold uppercase",
-                                    dynamicConfidence >= 75 ? "bg-emerald-500 text-white" : dynamicConfidence >= 60 ? "bg-amber-500 text-white" : "bg-neutral-800 text-neutral-400"
+                                    confidence >= 75 ? "bg-emerald-500 text-white" : confidence >= 60 ? "bg-amber-500 text-white" : "bg-neutral-800 text-neutral-400"
                                 )}>
-                                    {dynamicConfidence >= 75 ? "Strong" : dynamicConfidence >= 60 ? "Moderate" : "Neutral"}
+                                    {confidence >= 75 ? "Strong" : confidence >= 60 ? "Moderate" : "Neutral"}
                                 </span>
                             </div>
                         </div>
 
                         {/* Full Analysis Button */}
-                        <div className="w-full py-3 bg-[#1F2937] hover:bg-[#374151] rounded-lg text-sm font-bold text-white transition-colors flex items-center justify-center gap-2">
+                        <div className={cn(
+                            "w-full py-3 rounded-lg text-sm font-bold text-white transition-colors flex items-center justify-center gap-2",
+                            isEliteTier
+                                ? "bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/20"
+                                : "bg-[#1F2937] hover:bg-[#374151]"
+                        )}>
                             Full Analysis
                             <TrendingUp className="w-4 h-4" />
                         </div>
@@ -300,7 +282,7 @@ export function MatchCard({
                 homeLogo={homeLogo}
                 awayLogo={awayLogo}
                 leagueName={leagueName}
-                prediction={dynamicPrediction}
+                prediction={prediction}
                 date={date}
                 time={time}
             />

@@ -10,25 +10,30 @@ export default async function Home() {
     // Fetch fixtures for the next 5 days
     const fixtures = await sportmonksService.getFixtures(5);
 
-    // Filter for "Featured" - Let's take the first 8 sorted by time
-    // XL grid allows 4 columns, so 8 is a good number
-    const featuredMatches = [...fixtures]
-        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-        .slice(0, 8)
-        .map((f: Match) => ({
-            id: f.id,
-            homeTeam: f.home_team,
-            awayTeam: f.away_team,
-            homeLogo: f.home_logo,
-            awayLogo: f.away_logo,
-            leagueName: f.league_name,
-            prediction: f.prediction || "Analyzing...",
-            confidence: f.confidence || 0,
-            time: new Date(f.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            date: f.date,
-            isLive: f.is_live,
-            isLocked: f.is_locked,
-        }));
+    // Engine v2: Show only Elite-tier picks on Dashboard (max 6)
+    const elitePicks = [...fixtures]
+        .filter((f: Match) => f.tier === 'elite')
+        .sort((a, b) => (b.ev_adjusted || 0) - (a.ev_adjusted || 0))
+        .slice(0, 6);
+
+    const featuredMatches = elitePicks.map((f: Match) => ({
+        id: f.id,
+        homeTeam: f.home_team,
+        awayTeam: f.away_team,
+        homeLogo: f.home_logo,
+        awayLogo: f.away_logo,
+        leagueName: f.league_name,
+        prediction: f.prediction || "Analyzing...",
+        confidence: f.confidence || 0,
+        time: new Date(f.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: f.date,
+        isLive: f.is_live,
+        isLocked: f.is_locked,
+        tier: f.tier,
+        odds: f.odds,
+        evAdjusted: f.ev_adjusted,
+        edge: f.edge,
+    }));
 
 
     return (
@@ -54,11 +59,27 @@ export default async function Home() {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {featuredMatches.map((match: any, i: number) => (
-                        <MatchCard key={i} {...match} />
-                    ))}
-                </div>
+                {featuredMatches.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {featuredMatches.map((match: any, i: number) => (
+                            <MatchCard key={i} {...match} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-16 px-8 rounded-xl border border-dashed border-amber-400/20 text-center bg-amber-400/5">
+                        <h3 className="text-xl font-bold text-white mb-3 tracking-tight">No Elite Picks Today</h3>
+                        <p className="text-neutral-400 text-sm mb-6 max-w-md mx-auto">
+                            The engine didn't find any matches meeting Elite-tier criteria (EV ≥ 8%, odds 1.70–2.50).
+                            Check the Terminal for Safe selections.
+                        </p>
+                        <Link
+                            href="/games/today"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#111827] border border-[#1F2937] text-xs font-bold text-white uppercase tracking-widest hover:bg-[#1F2937] transition-all"
+                        >
+                            View Terminal <span className="text-blue-400">→</span>
+                        </Link>
+                    </div>
+                )}
             </section>
 
             <section className="bg-[#111827] border-y border-[#1F2937] py-32">
