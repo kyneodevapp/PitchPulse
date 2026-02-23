@@ -57,7 +57,7 @@ export function CommandBar({
                 <div className="flex items-center justify-between h-14 md:h-16 gap-4">
 
                     {/* Left: Date Selector & Quick Toggles */}
-                    <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+                    <div className="flex items-center gap-2 md:gap-4">
                         <div className="relative">
                             <button
                                 onClick={() => setIsDateOpen(!isDateOpen)}
@@ -79,7 +79,7 @@ export function CommandBar({
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: 10 }}
-                                            className="absolute top-full left-0 mt-2 w-64 bg-[#111827] border border-[#1F2937] rounded-xl shadow-2xl z-50 py-2"
+                                            className="absolute top-full left-0 mt-2 w-[calc(100vw-2rem)] sm:w-64 bg-[#111827] border border-[#1F2937] rounded-xl shadow-2xl z-50 py-2"
                                         >
                                             <div className="px-3 py-2 border-b border-[#1F2937] mb-2">
                                                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Select Terminal Date</span>

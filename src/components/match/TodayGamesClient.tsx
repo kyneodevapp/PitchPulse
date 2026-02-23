@@ -86,7 +86,7 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                             <div
                                 key={dateStr}
                                 id={`date-section-${dateStr.replace(/\s+/g, '-')}`}
-                                className="scroll-mt-64 space-y-8"
+                                className="scroll-mt-[180px] space-y-8"
                             >
                                 {filteredMatches.length > 0 ? (
                                     SUPPORTED_LEAGUES.map((league) => {
