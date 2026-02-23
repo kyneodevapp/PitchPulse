@@ -107,7 +107,7 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
                                         <div key={league.id} className="space-y-6">
                                             <div className="flex items-center gap-4">
                                                 <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em]">{league.name}</h4>
-                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#111827] border border-[#1F2937]">
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#0B0F14] border border-[#1F2937]">
                                                     <span className={cn(
                                                         "text-[10px] font-bold tabular-nums",
                                                         leagueHits / leagueMatches.length >= 0.6 ? "text-emerald-400" : "text-amber-400"
@@ -139,6 +139,7 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
                             <h3 className="text-2xl font-bold text-white mb-4 uppercase tracking-tighter">No Results Found</h3>
                             <p className="text-neutral-500 text-sm max-w-md mx-auto">
                                 We couldn't find any completed matches across our supported leagues.
+                                Our algorithms are constantly tracking historical data.
                             </p>
                         </div>
                     )}

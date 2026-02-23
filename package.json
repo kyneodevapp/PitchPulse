@@ -12,7 +12,6 @@
     "@clerk/nextjs": "^6.38.1",
     "@fontsource/space-grotesk": "^5.2.10",
     "@stripe/stripe-js": "^8.8.0",
-    "@supabase/supabase-js": "^2.97.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.34.0",
     "lucide-react": "^0.564.0",
@@ -23,10 +22,12 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.97.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
