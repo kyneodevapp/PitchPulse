@@ -32,6 +32,16 @@ export interface Match {
     probability?: number;
     market_id?: string;
     checksum?: string;
+    // Edge Engine v3 fields
+    edge_score?: number;
+    risk_tier?: 'A+' | 'A' | 'B';
+    suggested_stake?: number;
+    clv_projection?: number;
+    simulation_win_freq?: number;
+    implied_probability?: number;
+    model_probability?: number;
+    confidence_interval?: [number, number];
+    ev?: number;
 }
 
 
@@ -833,8 +843,8 @@ class SportMonksService {
                 awayFormPPG: awayForm?.ppg,
             }, odds);
 
-            // Pick Elite if available, otherwise Safe
-            const bestPick = engineResult.elite || engineResult.safe;
+            // Edge Engine v3: pick the ONE best bet
+            const bestPick = engineResult.best;
 
             if (bestPick) {
                 const prediction = toMatchPrediction(
@@ -850,6 +860,8 @@ class SportMonksService {
                     engineResult.lambdaHome,
                     engineResult.lambdaAway,
                     false,
+                    undefined,
+                    engineResult.simulation,
                 );
 
                 // Publish to immutable history (fire-and-forget)
@@ -869,7 +881,7 @@ class SportMonksService {
                     prediction: bestPick.label,
                     confidence: bestPick.confidence,
                     is_locked: true,
-                    tier: bestPick.tier as 'elite' | 'safe',
+                    tier: bestPick.riskTier === 'A+' ? 'elite' as const : 'safe' as const,
                     ev_adjusted: bestPick.evAdjusted,
                     edge: bestPick.edge,
                     odds: bestPick.odds,
@@ -879,31 +891,26 @@ class SportMonksService {
                     lambda_away: engineResult.lambdaAway,
                     probability: bestPick.probability,
                     market_id: bestPick.marketId,
+                    // Edge Engine v3 fields
+                    edge_score: bestPick.edgeScore,
+                    risk_tier: bestPick.riskTier,
+                    suggested_stake: bestPick.suggestedStake,
+                    clv_projection: bestPick.clvProjection?.clvPercent ?? 0,
+                    simulation_win_freq: bestPick.simulationWinFreq,
+                    implied_probability: bestPick.impliedProbability,
+                    model_probability: bestPick.probability,
+                    confidence_interval: bestPick.confidenceInterval,
+                    ev: bestPick.ev,
                 } as Match;
             }
 
-            // Fallback: No qualifying market found — use legacy calculation for display
-            const legacyBet = this.calculateBestPrediction(f.id, home, away, homeStats, awayStats, homeForm, awayForm);
-            return {
-                id: f.id,
-                home_team: home,
-                away_team: away,
-                home_logo: homeP?.image_path || "",
-                away_logo: awayP?.image_path || "",
-                start_time: f.starting_at,
-                league_name: f.league?.name || "League",
-                league_id: f.league_id,
-                date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
-                is_live: f.status === "LIVE" || f.status === "INPLAY",
-                prediction: legacyBet.outcome,
-                confidence: legacyBet.confidence,
-                candidates: legacyBet.candidates,
-                is_locked: false,
-                tier: 'safe' as const,
-            } as Match;
+            // No qualifying market found — skip this match entirely.
+            // Do NOT render unvalidated predictions. Nothing reaches UI without Edge Engine approval.
+            return null;
         }));
 
-        return results;
+        // Strip nulls — only validated, Edge Engine-approved matches survive
+        return results.filter((m): m is Match => m !== null);
     }
 
     async getPastFixtures(days: number = 3): Promise<PastMatch[]> {

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, Clock, ShieldAlert, Star, Lock, Zap, Shield } from "lucide-react";
+import { TrendingUp, Clock, ShieldAlert, Lock, Target, BarChart3, Zap, Activity, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { MatchAnalysisModal } from "./MatchAnalysisModal";
@@ -19,13 +19,48 @@ interface MatchCardProps {
     date: string;
     isLive?: boolean;
     isLocked?: boolean;
-    // Engine v2 fields
-    tier?: 'elite' | 'safe';
+    // Edge Engine fields
     odds?: number;
     evAdjusted?: number;
     edge?: number;
+    edgeScore?: number;
+    riskTier?: 'A+' | 'A' | 'B';
+    suggestedStake?: number;
+    clvProjection?: number;
+    simulationWinFreq?: number;
+    impliedProbability?: number;
+    modelProbability?: number;
+    ev?: number;
+    confidenceInterval?: [number, number];
 }
 
+// Risk tier visual config
+const TIER_STYLES = {
+    'A+': {
+        bg: 'bg-emerald-500/8',
+        border: 'border-emerald-400/30 hover:border-emerald-400/60',
+        glow: 'shadow-emerald-500/10',
+        accent: '#10B981',
+        badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+        text: 'text-emerald-400',
+    },
+    'A': {
+        bg: 'bg-amber-500/8',
+        border: 'border-amber-400/30 hover:border-amber-400/60',
+        glow: 'shadow-amber-500/10',
+        accent: '#FBBF24',
+        badge: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+        text: 'text-amber-400',
+    },
+    'B': {
+        bg: 'bg-slate-400/8',
+        border: 'border-slate-400/20 hover:border-slate-400/40',
+        glow: 'shadow-slate-500/10',
+        accent: '#94A3B8',
+        badge: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
+        text: 'text-slate-400',
+    },
+} as const;
 
 export function MatchCard({
     id,
@@ -40,29 +75,34 @@ export function MatchCard({
     date,
     isLive,
     isLocked,
-    tier = 'safe',
     odds,
     evAdjusted,
     edge,
+    edgeScore = 0,
+    riskTier = 'B',
+    suggestedStake,
+    clvProjection,
+    simulationWinFreq,
+    impliedProbability,
+    modelProbability,
+    ev,
 }: MatchCardProps) {
     const [homeError, setHomeError] = useState(false);
     const [awayError, setAwayError] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [bet365Odds, setBet365Odds] = useState<number | null>(odds || null);
-    const [bestBookmaker, setBestBookmaker] = useState<{ odds: number; name: string } | null>(null);
 
-    const isEliteTier = tier === 'elite';
+    const style = TIER_STYLES[riskTier] || TIER_STYLES['B'];
+    const modelProb = modelProbability ?? 0;
+    const impliedProb = impliedProbability ?? (odds ? 1 / odds : 0);
+    const displayEdge = edge ?? 0;
+    const displayEV = ev ?? evAdjusted ?? 0;
+    const displayClv = clvProjection ?? 0;
+    const displaySimFreq = simulationWinFreq ?? 0;
+    const displayStake = suggestedStake ?? 0;
 
-    // Tier-specific colors
-    const tierAccent = isEliteTier ? '#FBBF24' : '#3B82F6'; // Gold vs Blue
-    const tierGlow = isEliteTier ? 'shadow-amber-500/10' : 'shadow-blue-500/10';
-    const tierBorder = isEliteTier ? 'border-amber-400/30 hover:border-amber-400/60' : 'border-blue-400/20 hover:border-blue-400/50';
-    const tierBg = isEliteTier ? 'bg-amber-400/5' : 'bg-blue-400/5';
-
-    // Fetch odds lazily on mount (READ ONLY — no prediction overrides)
     useEffect(() => {
-        if (odds) return; // Already have odds from engine
-
+        if (odds) return;
         const fetchOdds = async () => {
             try {
                 const params = new URLSearchParams({
@@ -75,9 +115,6 @@ export function MatchCard({
                 if (resp.ok) {
                     const data = await resp.json();
                     if (data.bet365) setBet365Odds(data.bet365);
-                    if (data.best && data.best.bookmaker !== "bet365") {
-                        setBestBookmaker({ odds: data.best.odds, name: data.best.bookmaker });
-                    }
                 }
             } catch {
                 // Odds not available
@@ -86,7 +123,6 @@ export function MatchCard({
         fetchOdds();
     }, [id, prediction, homeTeam, awayTeam, odds]);
 
-
     return (
         <>
             <motion.div
@@ -94,61 +130,61 @@ export function MatchCard({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
                 className={cn(
-                    "bg-[#111827] rounded-xl overflow-hidden border transition-colors duration-200 flex flex-col h-full cursor-pointer group/card shadow-lg",
-                    tierBorder,
-                    tierGlow
+                    "bg-[#0D1117] rounded-xl overflow-hidden border transition-all duration-200 flex flex-col h-full cursor-pointer group/card shadow-lg",
+                    style.border,
+                    style.glow,
                 )}
                 onClick={() => setIsModalOpen(true)}
             >
-                <div className="p-6 flex-1 flex flex-col">
-                    {/* Header: Status, Time & Tier Badge */}
+                <div className="p-5 flex-1 flex flex-col">
+                    {/* Header Row: Risk Tier + League + Time */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
+                            {/* Risk Tier Badge */}
                             <div className={cn(
-                                "flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest",
-                                isLive ? "bg-red-500 text-white" : "bg-neutral-800 text-neutral-300"
+                                "flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border",
+                                style.badge,
                             )}>
-                                {isLive ? (
-                                    <>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                                        Live
-                                    </>
-                                ) : (
-                                    <>
-                                        <Clock className="w-3 h-3 sm:w-4 h-4" />
-                                        {date} • {time}
-                                    </>
-                                )}
+                                {riskTier === 'A+' ? <Zap className="w-2.5 h-2.5" /> : <Target className="w-2.5 h-2.5" />}
+                                {riskTier}
                             </div>
 
-                            {/* Tier Badge */}
-                            {isEliteTier ? (
-                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-amber-400/15 border border-amber-400/30 text-amber-400 text-[9px] font-bold uppercase tracking-widest">
-                                    <Zap className="w-2.5 h-2.5" />
-                                    Elite
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-400/10 border border-blue-400/20 text-blue-400 text-[9px] font-bold uppercase tracking-widest">
-                                    <Shield className="w-2.5 h-2.5" />
-                                    Safe
-                                </div>
-                            )}
+                            {/* Edge Score */}
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/10">
+                                <BarChart3 className="w-2.5 h-2.5 text-white/50" />
+                                <span className="text-[10px] font-bold text-white/70">{edgeScore}</span>
+                            </div>
 
                             {isLocked && (
-                                <div className="flex items-center gap-1 px-1.5 py-1 rounded bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[9px]">
+                                <div className="flex items-center px-1.5 py-1 rounded bg-emerald-400/10 border border-emerald-400/20 text-emerald-400">
                                     <Lock className="w-2 h-2" />
                                 </div>
                             )}
                         </div>
 
-
+                        <div className={cn(
+                            "flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest",
+                            isLive ? "bg-red-500 text-white" : "bg-[#161B22] text-neutral-400"
+                        )}>
+                            {isLive ? (
+                                <>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                    Live
+                                </>
+                            ) : (
+                                <>
+                                    <Clock className="w-3 h-3" />
+                                    {date} • {time}
+                                </>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Teams Section - Redesigned 3-Column Grid */}
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 mb-6 pb-6 border-b border-[#1F2937]/50">
-                        {/* Home Team Column */}
+                    {/* Teams Section */}
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 mb-5 pb-5 border-b border-[#1E293B]/60">
+                        {/* Home Team */}
                         <div className="flex flex-col items-center text-center w-full">
-                            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1E293B] overflow-hidden">
                                 {!homeError && homeLogo ? (
                                     <img
                                         src={homeLogo}
@@ -161,20 +197,20 @@ export function MatchCard({
                                 )}
                             </div>
                             <div className="min-h-[2.5rem] flex items-start justify-center w-full">
-                                <h3 className="text-sm sm:text-base lg:text-base font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
+                                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
                                     {homeTeam}
                                 </h3>
                             </div>
                         </div>
 
-                        {/* Middle Column (VS) */}
+                        {/* VS */}
                         <div className="flex items-center justify-center h-14 sm:h-16 lg:h-20 px-2">
                             <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">VS</span>
                         </div>
 
-                        {/* Away Team Column */}
+                        {/* Away Team */}
                         <div className="flex flex-col items-center text-center w-full">
-                            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1F2937] overflow-hidden">
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mb-2 relative flex items-center justify-center bg-[#0B0F14] rounded-xl border border-[#1E293B] overflow-hidden">
                                 {!awayError && awayLogo ? (
                                     <img
                                         src={awayLogo}
@@ -187,85 +223,70 @@ export function MatchCard({
                                 )}
                             </div>
                             <div className="min-h-[2.5rem] flex items-start justify-center w-full">
-                                <h3 className="text-sm sm:text-base lg:text-base font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
+                                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight leading-tight [text-wrap:balance]">
                                     {awayTeam}
                                 </h3>
                             </div>
                         </div>
                     </div>
 
-                    {/* Metrics Footer Section */}
-                    <div className="mt-auto space-y-6">
-                        {/* Signal & Odds */}
-                        <div className="flex items-end justify-between pt-0">
-                            <div className="flex flex-col gap-1">
-                                {/* EV Badge (Engine v2) */}
-                                {evAdjusted !== undefined && evAdjusted > 0 && (
-                                    <div className={cn(
-                                        "flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold mb-1",
-                                        isEliteTier
-                                            ? "bg-amber-400/10 text-amber-400 border border-amber-400/20"
-                                            : "bg-blue-400/10 text-blue-400 border border-blue-400/20"
-                                    )}>
-                                        +{(evAdjusted * 100).toFixed(1)}% EV
-                                    </div>
-                                )}
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-                                        Market
-                                    </span>
-                                    <span className="text-xs sm:text-sm lg:text-base font-bold text-white uppercase line-clamp-2 max-w-[200px] sm:max-w-[240px]">
-                                        {prediction}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-                                    Odds
-                                </span>
-                                <div className={cn(
-                                    "text-xl sm:text-2xl font-bold",
-                                    isEliteTier ? "text-[#FBBF24]" : "text-blue-400"
-                                )}>
-                                    {bet365Odds ? `@${bet365Odds.toFixed(2)}` : "—"}
-                                </div>
+                    {/* Market + Odds Row */}
+                    <div className="flex items-end justify-between mb-4">
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-[0.2em]">
+                                Signal
+                            </span>
+                            <span className="text-xs sm:text-sm font-bold text-white uppercase leading-snug max-w-[200px] sm:max-w-[240px]">
+                                {prediction}
+                            </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-[0.2em]">
+                                Odds
+                            </span>
+                            <div className={cn("text-xl sm:text-2xl font-black", style.text)}>
+                                {bet365Odds ? `@${bet365Odds.toFixed(2)}` : "—"}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Confidence Indicator */}
-                        <div className={cn(
-                            "flex items-center justify-between p-3 rounded-lg border",
-                            tierBg,
-                            isEliteTier ? "border-amber-400/10" : "border-blue-400/10"
-                        )}>
-                            <div className="flex flex-col">
-                                <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
-                                    Confidence
-                                </span>
-                                <div className="text-xl sm:text-2xl font-bold text-white">
-                                    {confidence}%
-                                </div>
+                    {/* Metrics Grid — Institutional Data Panel */}
+                    <div className="mt-auto space-y-3">
+                        {/* Row 1: Model Prob | Implied Prob | Edge % */}
+                        <div className="grid grid-cols-3 gap-2">
+                            <MetricCell label="Model Prob" value={`${(modelProb * 100).toFixed(1)}%`} />
+                            <MetricCell label="Implied" value={`${(impliedProb * 100).toFixed(1)}%`} />
+                            <MetricCell label="Edge" value={`+${(displayEdge * 100).toFixed(1)}%`} highlight />
+                        </div>
+
+                        {/* Row 2: EV | CLV Proj | Sim Freq */}
+                        <div className="grid grid-cols-3 gap-2">
+                            <MetricCell label="EV" value={`+${(displayEV * 100).toFixed(1)}%`} highlight />
+                            <MetricCell label="CLV Proj" value={`${displayClv > 0 ? '+' : ''}${displayClv.toFixed(1)}%`} />
+                            <MetricCell label="Sim Win" value={`${(displaySimFreq / 100).toFixed(0)}%`} />
+                        </div>
+
+                        {/* Row 3: Risk | Stake | Confidence */}
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className={cn(
+                                "flex flex-col items-center p-2 rounded-lg border",
+                                style.bg,
+                                riskTier === 'A+' ? 'border-emerald-500/20' : riskTier === 'A' ? 'border-amber-500/20' : 'border-slate-500/20',
+                            )}>
+                                <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">Risk</span>
+                                <span className={cn("text-sm font-black", style.text)}>{riskTier}</span>
                             </div>
-                            <div className="text-right">
-                                <span className={cn(
-                                    "px-2 py-1 rounded text-[10px] font-bold uppercase",
-                                    confidence >= 75 ? "bg-emerald-500 text-white" : confidence >= 60 ? "bg-amber-500 text-white" : "bg-neutral-800 text-neutral-400"
-                                )}>
-                                    {confidence >= 75 ? "Strong" : confidence >= 60 ? "Moderate" : "Neutral"}
-                                </span>
-                            </div>
+                            <MetricCell label="Stake" value={`${(displayStake * 100).toFixed(1)}%`} />
+                            <MetricCell label="Conf" value={`${confidence}%`} />
                         </div>
 
                         {/* Full Analysis Button */}
                         <div className={cn(
-                            "w-full py-3 rounded-lg text-sm font-bold text-white transition-colors flex items-center justify-center gap-2",
-                            isEliteTier
-                                ? "bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/20"
-                                : "bg-[#1F2937] hover:bg-[#374151]"
+                            "w-full py-3 rounded-lg text-xs font-bold text-white transition-all flex items-center justify-center gap-2 border",
+                            "bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20",
                         )}>
                             Full Analysis
-                            <TrendingUp className="w-4 h-4" />
+                            <ArrowUpRight className="w-3.5 h-3.5" />
                         </div>
                     </div>
                 </div>
@@ -285,5 +306,21 @@ export function MatchCard({
                 time={time}
             />
         </>
+    );
+}
+
+// ============ METRIC CELL COMPONENT ============
+
+function MetricCell({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+    return (
+        <div className="flex flex-col items-center p-2 rounded-lg bg-[#161B22] border border-[#1E293B]/60">
+            <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">{label}</span>
+            <span className={cn(
+                "text-sm font-bold",
+                highlight ? "text-emerald-400" : "text-white/90",
+            )}>
+                {value}
+            </span>
+        </div>
     );
 }

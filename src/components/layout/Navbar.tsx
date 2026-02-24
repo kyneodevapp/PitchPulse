@@ -41,10 +41,10 @@ export function Navbar() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex items-center gap-6">
+                        <div className="hidden sm:flex items-center gap-6" suppressHydrationWarning>
                             <SignedOut>
                                 <SignInButton mode="modal">
-                                    <button className="px-5 py-2.5 rounded-lg bg-[#FBBF24] hover:bg-white transition-all text-xs font-bold text-black uppercase tracking-widest">
+                                    <button className="px-5 py-2.5 rounded-lg bg-[#FBBF24] hover:bg-white transition-all text-xs font-bold text-black uppercase tracking-widest" suppressHydrationWarning>
                                         Terminal Login
                                     </button>
                                 </SignInButton>

@@ -10,13 +10,13 @@ export default async function Home() {
     // Fetch fixtures for the next 5 days
     const fixtures = await sportmonksService.getFixtures(5);
 
-    // Engine v2: Show only Elite-tier picks on Dashboard (max 6)
-    const elitePicks = [...fixtures]
-        .filter((f: Match) => f.tier === 'elite')
-        .sort((a, b) => (b.ev_adjusted || 0) - (a.ev_adjusted || 0))
-        .slice(0, 6);
+    // Edge Engine v3: Sort by Edge Score, filter to qualified picks only
+    const qualifiedPicks = [...fixtures]
+        .filter((f: Match) => f.edge_score && f.edge_score > 0 && (f.odds ?? 0) >= 1.80)
+        .sort((a, b) => (b.edge_score || 0) - (a.edge_score || 0))
+        .slice(0, 12); // Show top 12 by Edge Score
 
-    const featuredMatches = elitePicks.map((f: Match) => ({
+    const featuredMatches = qualifiedPicks.map((f: Match) => ({
         id: f.id,
         homeTeam: f.home_team,
         awayTeam: f.away_team,
@@ -29,10 +29,17 @@ export default async function Home() {
         date: f.date,
         isLive: f.is_live,
         isLocked: f.is_locked,
-        tier: f.tier,
         odds: f.odds,
         evAdjusted: f.ev_adjusted,
         edge: f.edge,
+        edgeScore: f.edge_score,
+        riskTier: f.risk_tier,
+        suggestedStake: f.suggested_stake,
+        clvProjection: f.clv_projection,
+        simulationWinFreq: f.simulation_win_freq,
+        impliedProbability: f.implied_probability,
+        modelProbability: f.model_probability,
+        ev: f.ev,
     }));
 
 
@@ -45,10 +52,10 @@ export default async function Home() {
                     <div>
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.3em]">Market Coverage</span>
+                            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.3em]">Edge Engine Active</span>
                         </div>
-                        <h2 className="text-4xl font-bold text-white mb-2 tracking-tighter">Dashboard Overview</h2>
-                        <p className="text-neutral-400 font-medium">Real-time AI insights for the most impactful matchups</p>
+                        <h2 className="text-4xl font-bold text-white mb-2 tracking-tighter">Signal Dashboard</h2>
+                        <p className="text-neutral-400 font-medium">One verified signal per match — ranked by composite Edge Score</p>
                     </div>
                     <Link
                         href="/games/today"
@@ -67,10 +74,10 @@ export default async function Home() {
                     </div>
                 ) : (
                     <div className="py-16 px-8 rounded-xl border border-dashed border-amber-400/20 text-center bg-amber-400/5">
-                        <h3 className="text-xl font-bold text-white mb-3 tracking-tight">No Elite Picks Today</h3>
+                        <h3 className="text-xl font-bold text-white mb-3 tracking-tight">No Qualifying Signals</h3>
                         <p className="text-neutral-400 text-sm mb-6 max-w-md mx-auto">
-                            The engine didn't find any matches meeting Elite-tier criteria (EV ≥ 8%, odds 1.70–2.50).
-                            Check the Terminal for Safe selections.
+                            The Edge Engine didn't find any matches passing all validation gates (EV ≥ 4%, Edge ≥ 3%, risk-approved).
+                            Check the Terminal for the full pipeline output.
                         </p>
                         <Link
                             href="/games/today"

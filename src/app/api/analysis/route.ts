@@ -7,7 +7,7 @@ import {
     deriveMarketProbabilities,
 } from "@/lib/engine/poisson";
 import { MARKET_WHITELIST } from "@/lib/engine/markets";
-import { CONFIDENCE_WEIGHTS } from "@/lib/engine/config";
+import { CONFIDENCE_WEIGHTS, ENGINE_CONFIG } from "@/lib/engine/config";
 
 // ============ TYPES ============
 
@@ -160,6 +160,7 @@ export async function GET(request: Request) {
             CONFIDENCE_WEIGHTS.DEFENSIVE_CONSISTENCY * defensiveConsistency +
             CONFIDENCE_WEIGHTS.MARKET_STABILITY * marketStability +
             CONFIDENCE_WEIGHTS.FORM_RELIABILITY * formReliability +
+            CONFIDENCE_WEIGHTS.ELO_STRENGTH * 75 +
             CONFIDENCE_WEIGHTS.INJURY_STABILITY * 75
         )));
 
@@ -246,7 +247,7 @@ export async function GET(request: Request) {
                 edge, ev,
                 isValue: edge > 0.05,
                 reasoning: generateReasoning(market.id, probability, edge, lambdaHome, lambdaAway, homeTeam, awayTeam),
-                tier: market.tier,
+                tier: edge > 0.05 ? 'A+' : 'B',
             });
         }
 
@@ -273,7 +274,7 @@ export async function GET(request: Request) {
                 lambdaHome, lambdaAway, predictedScore,
             },
             signals,
-            meta: { generatedAt: new Date().toISOString(), dataSource: "SportMonks API + PitchPulse Quant Engine v2", fixtureId },
+            meta: { generatedAt: new Date().toISOString(), dataSource: "SportMonks API + PitchPulse Edge Engine v3", fixtureId },
         };
 
         return NextResponse.json(response, {

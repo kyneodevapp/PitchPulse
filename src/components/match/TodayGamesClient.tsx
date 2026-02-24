@@ -10,6 +10,14 @@ interface TodayGamesClientProps {
     initialMatches: Match[];
 }
 
+/** Final render gate — NOTHING displays without passing this */
+function approveBet(m: Match): boolean {
+    if (!m.prediction) return false;
+    if ((m.odds ?? 0) < 1.80) return false;
+    if ((m.edge_score ?? 0) <= 0) return false;
+    return true;
+}
+
 const SUPPORTED_LEAGUES = [
     { id: 2, name: "Champions League", country: "Europe" },
     { id: 5, name: "Europa League", country: "Europe" },
@@ -90,7 +98,9 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                             >
                                 {filteredMatches.length > 0 ? (
                                     SUPPORTED_LEAGUES.map((league) => {
-                                        const leagueMatches = filteredMatches.filter(m => m.league_id === league.id);
+                                        const leagueMatches = filteredMatches
+                                            .filter(m => m.league_id === league.id)
+                                            .filter(approveBet);  // RENDER GATE: reject unvalidated
                                         if (leagueMatches.length === 0) return null;
 
                                         return (
@@ -116,10 +126,17 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                                                             date={m.date}
                                                             isLive={m.is_live}
                                                             isLocked={m.is_locked}
-                                                            tier={m.tier}
                                                             odds={m.odds}
                                                             evAdjusted={m.ev_adjusted}
                                                             edge={m.edge}
+                                                            edgeScore={m.edge_score}
+                                                            riskTier={m.risk_tier}
+                                                            suggestedStake={m.suggested_stake}
+                                                            clvProjection={m.clv_projection}
+                                                            simulationWinFreq={m.simulation_win_freq}
+                                                            impliedProbability={m.implied_probability}
+                                                            modelProbability={m.model_probability}
+                                                            ev={m.ev}
                                                         />
                                                     ))}
                                                 </div>
