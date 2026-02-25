@@ -307,7 +307,7 @@ class SportMonksService {
         this.footballDataApiKey = process.env.FOOTBALL_DATA_API_KEY;
     }
 
-    private async fetchSportMonks(endpoint: string, params: Record<string, string> = {}) {
+    private async fetchSportMonks(endpoint: string, params: Record<string, string> = {}, revalidate: number = 300) {
         if (!this.sportmonksApiKey) return null;
         const queryParams = new URLSearchParams({
             api_token: this.sportmonksApiKey,
@@ -318,7 +318,7 @@ class SportMonksService {
         try {
             const response = await fetch(`${this.sportmonksBaseUrl}${endpoint}?${queryParams}`, {
                 signal: controller.signal,
-                next: { revalidate: 300 },
+                next: { revalidate },
             });
             return await response.json();
         } catch (error) {
@@ -563,7 +563,7 @@ class SportMonksService {
                 filters: `bookmakers:${ukBookmakers}`,
                 per_page: "150",
                 page: String(page),
-            });
+            }, 0); // revalidate: 0 to bypass Next.js data cache (avoids 2MB limit/integrity errors)
             if (!data?.data || data.data.length === 0) break;
             allOdds.push(...data.data);
             hasMore = data.pagination?.has_more === true;
