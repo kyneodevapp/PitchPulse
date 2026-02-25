@@ -269,7 +269,7 @@ export class PredictionStore {
                 });
             }
         } catch (e) {
-            // Fails silently
+            console.error("[PredictionStore] Supabase write failed:", e instanceof Error ? e.message : String(e));
         }
     }
 }
@@ -548,8 +548,8 @@ class SportMonksService {
                     return cachedOdds;
                 }
             }
-        } catch {
-            // Supabase not available yet, continue with API
+        } catch (e) {
+            console.warn("[OddsCache] Supabase read skipped:", e instanceof Error ? e.message : String(e));
         }
 
         // Fetch from SportMonks API
@@ -596,8 +596,8 @@ class SportMonksService {
                     { onConflict: "fixture_id,bookmaker_id,market_id,label" }
                 );
             }
-        } catch {
-            // Supabase write failed silently
+        } catch (e) {
+            console.error("[OddsCache] Supabase upsert failed:", e instanceof Error ? e.message : String(e));
         }
 
         return normalized;

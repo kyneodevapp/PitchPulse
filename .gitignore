@@ -42,3 +42,14 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# Root-level dev/debug scripts — contain hardcoded API keys, never commit
+fetch_matches.js
+find_everton.js
+find_forest_id.js
+check_cache.js
+check_fixture_prediction.js
+seed_sheffield.js
+championship.json
+fixtures.json
+fixtures_today.json

@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rateLimit";
 import { sportmonksService } from "@/lib/services/prediction";
 import {
     calculateStrength,
@@ -123,6 +124,18 @@ export async function GET(request: Request) {
     const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
     if (stripeStatus !== "active" && !isInTrial) {
         return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
+    }
+
+    // Rate limit: 30 analysis requests per user per minute
+    const rl = rateLimit(`analysis:${userId}`, { limit: 30, windowMs: 60_000 });
+    if (!rl.allowed) {
+        return NextResponse.json(
+            { error: "Too many requests. Please wait before retrying." },
+            {
+                status: 429,
+                headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+            }
+        );
     }
 
     const { searchParams } = new URL(request.url);

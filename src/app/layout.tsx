@@ -41,9 +41,10 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
+      {/* suppressHydrationWarning on <html> is intentional: browser extensions
+          (e.g. dark-mode tools) can add attributes between SSR and hydration. */}
       <html lang="en" className="dark" suppressHydrationWarning>
         <body
-          suppressHydrationWarning
           className={cn(
             outfit.className,
             "min-h-screen bg-[#020202] text-white antialiased selection:bg-amber-500/30"
