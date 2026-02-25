@@ -4,7 +4,13 @@ import { motion } from "framer-motion";
 import { TrendingUp, Clock, ShieldAlert, Lock, Target, BarChart3, Zap, Activity, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { MatchAnalysisModal } from "./MatchAnalysisModal";
+import dynamic from "next/dynamic";
+
+// Lazy-load the heavy analysis modal — it is 634 LOC with Framer Motion + portal
+const MatchAnalysisModal = dynamic(
+    () => import("./MatchAnalysisModal").then(m => ({ default: m.MatchAnalysisModal })),
+    { ssr: false }
+);
 
 interface MatchCardProps {
     id: number;

@@ -1,7 +1,20 @@
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { sportmonksService } from "@/lib/services/prediction";
 
 export async function GET(request: Request) {
+    const { userId } = await auth();
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const user = await currentUser();
+    const stripeStatus = user?.publicMetadata?.stripeStatus as string | undefined;
+    const createdAt = user?.createdAt ?? 0;
+    const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
+    if (stripeStatus !== "active" && !isInTrial) {
+        return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const fixtureId = Number(searchParams.get("fixtureId"));
     const prediction = searchParams.get("prediction") || undefined;

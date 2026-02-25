@@ -1,9 +1,20 @@
+import type { Metadata } from "next";
 import { sportmonksService } from "@/lib/services/prediction";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { HistoryClient } from "@/components/match/HistoryClient";
 
 export const revalidate = 300; // ISR: regenerate every 5 min (history is less time-sensitive)
+
+export const metadata: Metadata = {
+    title: "Prediction History",
+    description: "Track PitchPulse AI prediction accuracy over the last 3 days across 9 major European leagues. Review hits, misses, and model performance.",
+    openGraph: {
+        title: "Prediction History | PitchPulse",
+        description: "Track AI prediction accuracy over the last 3 days across 9 major European leagues.",
+        url: "/history",
+    },
+};
 
 export default async function HistoryPage() {
     const pastFixtures = await sportmonksService.getPastFixtures(3);

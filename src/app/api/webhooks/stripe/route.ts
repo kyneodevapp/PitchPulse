@@ -18,8 +18,9 @@ export async function POST(req: Request) {
             signature,
             process.env.STRIPE_WEBHOOK_SECRET || ""
         );
-    } catch (error: any) {
-        return new NextResponse(`Webhook Error: ${error.message}`, { status: 1 });
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return new NextResponse(`Webhook Error: ${message}`, { status: 400 });
     }
 
     const session = event.data.object as any;
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
         const userId = session.metadata.userId;
 
         if (!userId) {
-            return new NextResponse("User ID not found", { status: 1 });
+            return new NextResponse("User ID not found", { status: 400 });
         }
 
         await clerkClient.users.updateUserMetadata(userId, {
@@ -41,10 +42,21 @@ export async function POST(req: Request) {
     }
 
     if (event.type === "customer.subscription.deleted") {
-        // Find the user with this subscription ID (this would require a DB lookup in a larger app, 
-        // but here we can try to find the Clerk user if we stored it).
-        // For now, let's assume the user cancels and we sync that.
-        // In a surgical implementation, we'd query users by metadata or use a database.
+        const subscription = event.data.object as { id: string };
+        // Search Clerk users for the one with this subscription ID in their metadata.
+        // Works well for small-to-medium user counts; migrate to a DB lookup at scale.
+        const { data: users } = await clerkClient.users.getUserList({ limit: 500 });
+        const user = users.find(
+            u => (u.publicMetadata as Record<string, unknown>)?.stripeSubscriptionId === subscription.id
+        );
+        if (user) {
+            await clerkClient.users.updateUserMetadata(user.id, {
+                publicMetadata: {
+                    stripeStatus: "cancelled",
+                    stripeSubscriptionId: null,
+                },
+            });
+        }
     }
 
     return new NextResponse(null, { status: 200 });

@@ -208,12 +208,6 @@ function findOddsForMarket(
     let filtered = odds.filter(o => market.sportmonksMarketIds.includes(o.market_id));
     if (filtered.length === 0) return null;
 
-    // Debug: log what market 97 and 10 labels look like
-    if ((market.sportmonksMarketIds.includes(97) || market.sportmonksMarketIds.includes(10)) && filtered.length > 0) {
-        const sampleLabels = filtered.slice(0, 10).map(o => `"${o.label}" / name="${o.odds_name}" / odds=${o.odds_value}`);
-        console.log(`[OddsDebug] Market ${market.sportmonksMarketIds} (${market.id}) for ${homeTeam} vs ${awayTeam}: ${sampleLabels.join(', ')}`);
-    }
-
     if (market.sportmonksLabel) {
         const labelLower = market.sportmonksLabel.toLowerCase();
         const labelFiltered = filtered.filter(o => {
@@ -342,16 +336,6 @@ export function processMatch(
     // STEP 10: Evaluate all markets with blended probabilities
     const candidates: EvaluatedMarket[] = [];
 
-    // === DIAGNOSTIC LOGGING (temporary) ===
-    const diagnostics: string[] = [];
-    diagnostics.push(`\n[Engine] ====== ${input.homeTeam} vs ${input.awayTeam} (${input.leagueId}) ======`);
-    diagnostics.push(`[Engine] λ_home=${lambdaHome.toFixed(3)}, λ_away=${lambdaAway.toFixed(3)}, confidence=${confidence}`);
-    diagnostics.push(`[Engine] Total odds entries: ${odds.length}`);
-
-    // Log available market IDs in odds data
-    const availableMarketIds = [...new Set(odds.map(o => o.market_id))];
-    diagnostics.push(`[Engine] Available market IDs in odds: [${availableMarketIds.join(', ')}]`);
-
     for (const market of MARKET_WHITELIST) {
         let probability: number;
 
@@ -362,7 +346,6 @@ export function processMatch(
         // Get Poisson probability
         const poissonProb = poissonProbs[market.probKey] as number;
         if (typeof poissonProb !== 'number' || poissonProb <= 0) {
-            diagnostics.push(`[Engine] ${market.id}: SKIP — no poisson prob (${poissonProb})`);
             continue;
         }
 
@@ -381,11 +364,8 @@ export function processMatch(
         // Find odds
         const oddsData = findOddsForMarket(odds, market, input.homeTeam, input.awayTeam);
         if (!oddsData) {
-            diagnostics.push(`[Engine] ${market.id}: SKIP — no odds matched`);
             continue;
         }
-
-        diagnostics.push(`[Engine] ${market.id}: odds=${oddsData.bestOdds.toFixed(2)}, prob=${(probability * 100).toFixed(1)}%, books=${oddsData.bookmakerCount}`);
 
         // Evaluate (no longer rejects negative edge)
         const evaluated = evaluateMarket(
@@ -395,7 +375,6 @@ export function processMatch(
             oddsData.bookmakerCount,
         );
         if (!evaluated) {
-            diagnostics.push(`[Engine]   → SKIP (no evaluation produced)`);
             continue;
         }
 
@@ -435,28 +414,15 @@ export function processMatch(
         evaluated.riskTier = edgeResult.riskTier;
         evaluated.suggestedStake = edgeResult.suggestedStake;
 
-        diagnostics.push(`[Engine]   → SCORED: edgeScore=${edgeResult.edgeScore}, tier=${edgeResult.riskTier}, ev=${(evaluated.ev * 100).toFixed(1)}%`);
         candidates.push(evaluated);
     }
 
     // STEP 11: Select ONE best bet — highest Edge Score with odds >= ODDS_DISPLAY_MIN
     const sorted = candidates
-        .filter(c => {
-            if (c.odds < ENGINE_CONFIG.ODDS_DISPLAY_MIN) {
-                diagnostics.push(`[Engine] Display floor rejected ${c.marketId}: odds ${c.odds.toFixed(2)} < ${ENGINE_CONFIG.ODDS_DISPLAY_MIN}`);
-                return false;
-            }
-            return true;
-        })
+        .filter(c => c.odds >= ENGINE_CONFIG.ODDS_DISPLAY_MIN)
         .sort((a, b) => b.edgeScore - a.edgeScore);
 
     const best = sorted[0] ?? null;
-    diagnostics.push(`[Engine] Candidates: ${candidates.length}, Displayable: ${sorted.length}, Selected: ${best?.marketId || 'NONE'} (${best?.label || 'N/A'})`);
-    diagnostics.push(`[Engine] ====== END ======\n`);
-
-    // Print diagnostics
-    console.log(diagnostics.join('\n'));
-
     return { best, lambdaHome, lambdaAway, confidence, simulation };
 }
 

@@ -426,6 +426,7 @@ export function MatchAnalysisModal({
                         {/* Close Button — Issue #4: fixed 16px inset, 40px touch target, never overlaps scrollbar */}
                         <button
                             onClick={onClose}
+                            aria-label="Close match analysis"
                             className={cn(
                                 "absolute top-4 right-4 z-[60]",
                                 "w-10 h-10 min-w-[40px] min-h-[40px]",
@@ -436,7 +437,7 @@ export function MatchAnalysisModal({
                                 "active:scale-95 transition-all duration-150",
                             )}
                         >
-                            <X className="w-4 h-4" />
+                            <X className="w-4 h-4" aria-hidden="true" />
                         </button>
 
                         {/* Scrollable Body — right padding keeps content away from scrollbar */}

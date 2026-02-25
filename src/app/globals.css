@@ -61,17 +61,18 @@
     }
 }
 
-.glass,
-.glass-dark {
-    background-color: #111827;
-    border: 1px solid #1F2937;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+.glass {
+    background-color: rgba(17, 24, 39, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
-.text-gradient {
-    color: #FFFFFF;
-    background: none;
-    -webkit-background-clip: unset;
+.glass-dark {
+    background-color: rgba(11, 15, 20, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.4);
 }

@@ -9,7 +9,7 @@ export async function GET() {
     const user = await currentUser();
 
     if (!userId || !user) {
-        return new NextResponse("Unauthorized", { status: 1 });
+        return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const stripeSession = await stripe.checkout.sessions.create({

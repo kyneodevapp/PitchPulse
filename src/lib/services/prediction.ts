@@ -313,28 +313,38 @@ class SportMonksService {
             api_token: this.sportmonksApiKey,
             ...params
         });
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
         try {
             const response = await fetch(`${this.sportmonksBaseUrl}${endpoint}?${queryParams}`, {
-                next: { revalidate: 300 }
+                signal: controller.signal,
+                next: { revalidate: 300 },
             });
             return await response.json();
         } catch (error) {
             console.error("SportMonks API Error:", error);
             return null;
+        } finally {
+            clearTimeout(timeout);
         }
     }
 
     private async fetchFootballData(endpoint: string) {
         if (!this.footballDataApiKey) return null;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
         try {
             const response = await fetch(`${this.footballDataBaseUrl}${endpoint}`, {
+                signal: controller.signal,
                 headers: { "X-Auth-Token": this.footballDataApiKey },
-                next: { revalidate: 3600 }
+                next: { revalidate: 3600 },
             });
             return await response.json();
         } catch (error) {
             console.error("Football-Data API Error:", error);
             return null;
+        } finally {
+            clearTimeout(timeout);
         }
     }
 

@@ -73,8 +73,11 @@ export function Navbar() {
                         <button
                             className="md:hidden p-2 text-neutral-400 hover:text-white transition-colors border border-[#1F2937] rounded-lg bg-[#111827]"
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+                            aria-expanded={isMobileMenuOpen}
+                            aria-controls="mobile-nav-menu"
                         >
-                            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                            {isMobileMenuOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
                         </button>
                     </div>
                 </div>
@@ -84,6 +87,7 @@ export function Navbar() {
             <AnimatePresence>
                 {isMobileMenuOpen && (
                     <motion.div
+                        id="mobile-nav-menu"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}

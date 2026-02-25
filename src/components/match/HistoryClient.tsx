@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { PastMatch } from "@/lib/services/prediction";
+import { SUPPORTED_LEAGUES } from "@/lib/constants";
 import { ResultCard } from "./ResultCard";
 import { CommandBar } from "./CommandBar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,33 +13,21 @@ interface HistoryClientProps {
     initialMatches: PastMatch[];
 }
 
-const SUPPORTED_LEAGUES = [
-    { id: 2, name: "Champions League", country: "Europe" },
-    { id: 5, name: "Europa League", country: "Europe" },
-    { id: 8, name: "Premier League", country: "England" },
-    { id: 9, name: "Championship", country: "England" },
-    { id: 564, name: "La Liga", country: "Spain" },
-    { id: 567, name: "La Liga 2", country: "Spain" },
-    { id: 82, name: "Bundesliga", country: "Germany" },
-    { id: 384, name: "Serie A", country: "Italy" },
-    { id: 387, name: "Serie B", country: "Italy" },
-];
-
 export function HistoryClient({ initialMatches }: HistoryClientProps) {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [activeLeagueId, setActiveLeagueId] = useState<number | null>(null);
 
-    // Grouping by Date
-    const groupedByDate = initialMatches.reduce((acc, match) => {
+    // Grouping by Date — memoised to avoid recomputation on every render
+    const groupedByDate = useMemo(() => initialMatches.reduce((acc, match) => {
         const date = match.date;
         if (!acc[date]) acc[date] = [];
         acc[date].push(match);
         return acc;
-    }, {} as Record<string, PastMatch[]>);
+    }, {} as Record<string, PastMatch[]>), [initialMatches]);
 
-    const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
+    const sortedDates = useMemo(() => Object.keys(groupedByDate).sort((a, b) => {
         return new Date(groupedByDate[b][0].start_time).getTime() - new Date(groupedByDate[a][0].start_time).getTime();
-    });
+    }), [groupedByDate]);
 
     // Stats
     const totalMatches = initialMatches.length;
@@ -51,7 +40,7 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
         }
     }, [sortedDates, selectedDate]);
 
-    const handleDateChange = (dateStr: string) => {
+    const handleDateChange = useCallback((dateStr: string) => {
         setSelectedDate(dateStr);
         const element = document.getElementById(`history-date-${dateStr.replace(/\s+/g, '-')}`);
         if (element) {
@@ -59,7 +48,7 @@ export function HistoryClient({ initialMatches }: HistoryClientProps) {
             const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
             window.scrollTo({ top: y, behavior: 'smooth' });
         }
-    };
+    }, []);
 
     return (
         <div className="space-y-6">

@@ -1,9 +1,20 @@
+import type { Metadata } from "next";
 import { sportmonksService } from "@/lib/services/prediction";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { TodayGamesClient } from "@/components/match/TodayGamesClient";
 
 export const revalidate = 120; // ISR: regenerate every 2 min
+
+export const metadata: Metadata = {
+    title: "Upcoming Predictions",
+    description: "AI-powered football predictions for the next 10 days across 9 major European leagues. UCL, Europa League, Premier League, and more.",
+    openGraph: {
+        title: "Upcoming Predictions | PitchPulse",
+        description: "AI-powered football predictions for the next 10 days across 9 major European leagues.",
+        url: "/games/today",
+    },
+};
 
 export default async function TodayGamesPage() {
     // Fetch fixtures for the next 10 days for full coverage across all 7 leagues

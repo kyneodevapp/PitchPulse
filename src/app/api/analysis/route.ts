@@ -1,3 +1,4 @@
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { sportmonksService } from "@/lib/services/prediction";
 import {
@@ -111,13 +112,28 @@ function generateInsight(
 // ============ HANDLER ============
 
 export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const fixtureId = Number(searchParams.get("fixtureId"));
-    const homeTeam = searchParams.get("homeTeam") || "Home";
-    const awayTeam = searchParams.get("awayTeam") || "Away";
+    // Auth guard — must be a signed-in user with an active subscription or active trial
+    const { userId } = await auth();
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const user = await currentUser();
+    const stripeStatus = user?.publicMetadata?.stripeStatus as string | undefined;
+    const createdAt = user?.createdAt ?? 0;
+    const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
+    if (stripeStatus !== "active" && !isInTrial) {
+        return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
+    }
 
-    if (!fixtureId) {
-        return NextResponse.json({ error: "Missing fixtureId" }, { status: 400 });
+    const { searchParams } = new URL(request.url);
+    const rawFixtureId = searchParams.get("fixtureId");
+    const fixtureId = Number(rawFixtureId);
+    // Sanitise team name params: strip non-printable chars, cap at 100 chars
+    const homeTeam = (searchParams.get("homeTeam") || "Home").slice(0, 100).replace(/[\x00-\x1F\x7F]/g, "");
+    const awayTeam = (searchParams.get("awayTeam") || "Away").slice(0, 100).replace(/[\x00-\x1F\x7F]/g, "");
+
+    if (!Number.isInteger(fixtureId) || fixtureId <= 0) {
+        return NextResponse.json({ error: "Invalid fixtureId" }, { status: 400 });
     }
 
     try {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Match } from "@/lib/services/prediction";
+import { SUPPORTED_LEAGUES } from "@/lib/constants";
 import { MatchCard } from "./MatchCard";
 import { CommandBar } from "./CommandBar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,36 +19,25 @@ function approveBet(m: Match): boolean {
     return true;
 }
 
-const SUPPORTED_LEAGUES = [
-    { id: 2, name: "Champions League", country: "Europe" },
-    { id: 5, name: "Europa League", country: "Europe" },
-    { id: 8, name: "Premier League", country: "England" },
-    { id: 9, name: "Championship", country: "England" },
-    { id: 564, name: "La Liga", country: "Spain" },
-    { id: 567, name: "La Liga 2", country: "Spain" },
-    { id: 82, name: "Bundesliga", country: "Germany" },
-    { id: 384, name: "Serie A", country: "Italy" },
-    { id: 387, name: "Serie B", country: "Italy" },
-];
-
 export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
     const [activeLeagueId, setActiveLeagueId] = useState<number | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-    // Generate full 11-day range starting from today (today + next 10 days)
-    const availableDates = Array.from({ length: 11 }, (_, i) => {
+    // Generate full 11-day range starting from today — memoised so it doesn't
+    // produce a new array reference on every render
+    const availableDates = useMemo(() => Array.from({ length: 11 }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() + i);
         return d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' });
-    });
+    }), []);
 
     // Grouping by Date
-    const groupedByDate = initialMatches.reduce((acc, match) => {
+    const groupedByDate = useMemo(() => initialMatches.reduce((acc, match) => {
         const date = match.date;
         if (!acc[date]) acc[date] = [];
         acc[date].push(match);
         return acc;
-    }, {} as Record<string, Match[]>);
+    }, {} as Record<string, Match[]>), [initialMatches]);
 
     useEffect(() => {
         if (!selectedDate && availableDates.length > 0) {
@@ -55,7 +45,7 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
         }
     }, [availableDates, selectedDate]);
 
-    const handleDateChange = (dateStr: string) => {
+    const handleDateChange = useCallback((dateStr: string) => {
         setSelectedDate(dateStr);
         const element = document.getElementById(`date-section-${dateStr.replace(/\s+/g, '-')}`);
         if (element) {
@@ -63,7 +53,7 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
             const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
             window.scrollTo({ top: y, behavior: 'smooth' });
         }
-    };
+    }, []);
 
     return (
         <div className="space-y-6">

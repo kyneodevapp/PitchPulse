@@ -17,7 +17,7 @@ interface CommandBarProps {
     availableDates: string[];
     activeLeagueId: number | null;
     onLeagueChange: (id: number | null) => void;
-    leagues: League[];
+    leagues: readonly League[];
     isHistory?: boolean;
     hitRate?: number;
 }
@@ -61,6 +61,9 @@ export function CommandBar({
                         <div className="relative">
                             <button
                                 onClick={() => setIsDateOpen(!isDateOpen)}
+                                aria-label="Select date"
+                                aria-expanded={isDateOpen}
+                                aria-haspopup="listbox"
                                 className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-[#0B0F14] border border-[#1F2937] rounded-lg text-white hover:border-[#FBBF24]/50 transition-colors group"
                             >
                                 <CalendarIcon className="w-3.5 h-3.5 text-[#FBBF24]" />
@@ -158,6 +161,9 @@ export function CommandBar({
                         <div className="relative">
                             <button
                                 onClick={() => setIsLeagueOpen(!isLeagueOpen)}
+                                aria-label="Filter by league"
+                                aria-expanded={isLeagueOpen}
+                                aria-haspopup="listbox"
                                 className={cn(
                                     "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all border",
                                     activeLeagueId

@@ -7,8 +7,29 @@ import { Navbar } from "@/components/layout/Navbar";
 const outfit = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PitchPulse | Elite Sports Predictions",
-  description: "Advanced AI-powered sports predictions and match analysis.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://pitchpulse.app"),
+  title: {
+    default: "PitchPulse | Elite Football Predictions",
+    template: "%s | PitchPulse",
+  },
+  description: "Institutional-grade football predictions powered by Poisson modelling, Monte Carlo simulation, and real-time bookmaker data. Edge Engine v3.",
+  keywords: ["football predictions", "sports betting analysis", "match analysis", "Premier League predictions", "AI football tips", "edge betting"],
+  authors: [{ name: "PitchPulse" }],
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    siteName: "PitchPulse",
+    title: "PitchPulse | Elite Football Predictions",
+    description: "Institutional-grade football predictions powered by Poisson modelling, Monte Carlo simulation, and real-time bookmaker data.",
+    url: "/",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "PitchPulse" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PitchPulse | Elite Football Predictions",
+    description: "Institutional-grade football predictions powered by AI and real-time bookmaker data.",
+    images: ["/og-image.png"],
+  },
 };
 
 import { ClerkProvider } from "@clerk/nextjs";
