@@ -7,8 +7,8 @@ import Link from "next/link";
 export const revalidate = 120; // ISR: regenerate every 2 min
 
 export default async function Home() {
-    // Fetch fixtures for the next 5 days
-    const fixtures = await sportmonksService.getFixtures(5);
+    // Fetch fixtures for the next 10 days (matches /games/today window)
+    const fixtures = await sportmonksService.getFixtures(10);
 
     // Edge Engine v3: Sort by Edge Score, filter to qualified picks only
     const qualifiedPicks = [...fixtures]

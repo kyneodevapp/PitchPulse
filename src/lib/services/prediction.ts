@@ -821,6 +821,8 @@ class SportMonksService {
                     probability: existing.p_model,
                     market_id: existing.market_id,
                     checksum: existing.checksum,
+                    // Restore edge_score so homepage filter (edge_score > 0) keeps this match
+                    edge_score: existing.ev_adjusted > 0 ? Math.round(existing.ev_adjusted * 500) : 50,
                 } as Match;
             }
 
