@@ -361,6 +361,7 @@ export function MatchAnalysisModal({
 }: MatchAnalysisModalProps) {
     const [data, setData] = useState<AnalysisData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
@@ -372,14 +373,19 @@ export function MatchAnalysisModal({
         if (isOpen) {
             document.body.style.overflow = "hidden";
             setIsLoading(true);
+            setError(null);
+            setData(null);
             const params = new URLSearchParams({
                 fixtureId: String(fixtureId),
                 homeTeam, awayTeam,
             });
             fetch(`/api/analysis?${params}`)
-                .then(r => r.json())
+                .then(r => {
+                    if (!r.ok) throw new Error(r.status === 401 ? "Please sign in to view analysis." : r.status === 403 ? "Premium subscription required." : "Analysis temporarily unavailable.");
+                    return r.json();
+                })
                 .then(d => { setData(d); setIsLoading(false); })
-                .catch(() => setIsLoading(false));
+                .catch((e) => { setError(e.message || "Analysis unavailable."); setIsLoading(false); });
         } else {
             document.body.style.overflow = "unset";
         }
@@ -536,6 +542,13 @@ export function MatchAnalysisModal({
                                         <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-500">
                                             Running Engine Pipeline...
                                         </span>
+                                    </div>
+                                ) : error ? (
+                                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center">
+                                            <X className="w-5 h-5 text-red-400" />
+                                        </div>
+                                        <span className="text-sm font-medium text-neutral-400 text-center max-w-xs">{error}</span>
                                     </div>
                                 ) : isTrialExpired ? (
                                     <Paywall onUpgrade={() => router.push("/api/checkout")} />

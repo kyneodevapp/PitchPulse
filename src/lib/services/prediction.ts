@@ -314,7 +314,7 @@ class SportMonksService {
             ...params
         });
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
+        const timeout = setTimeout(() => controller.abort(), 25000);
         try {
             const response = await fetch(`${this.sportmonksBaseUrl}${endpoint}?${queryParams}`, {
                 signal: controller.signal,
@@ -332,7 +332,7 @@ class SportMonksService {
     private async fetchFootballData(endpoint: string) {
         if (!this.footballDataApiKey) return null;
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
+        const timeout = setTimeout(() => controller.abort(), 25000);
         try {
             const response = await fetch(`${this.footballDataBaseUrl}${endpoint}`, {
                 signal: controller.signal,
