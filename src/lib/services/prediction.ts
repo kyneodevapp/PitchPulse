@@ -796,34 +796,43 @@ class SportMonksService {
             // Check immutable history first
             const existing = await PredictionHistory.get(f.id);
             if (existing) {
-                return {
-                    id: f.id,
-                    home_team: home,
-                    away_team: away,
-                    home_logo: homeP?.image_path || "",
-                    away_logo: awayP?.image_path || "",
-                    start_time: f.starting_at,
-                    league_name: f.league?.name || "League",
-                    league_id: f.league_id,
-                    date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
-                    is_live: f.status === "LIVE" || f.status === "INPLAY",
-                    prediction: existing.market,
-                    confidence: existing.confidence,
-                    is_locked: true,
-                    tier: existing.tier as 'elite' | 'safe',
-                    ev_adjusted: existing.ev_adjusted,
-                    edge: existing.edge,
-                    odds: existing.odds,
-                    bet365_odds: existing.bet365_odds,
-                    best_bookmaker: existing.best_bookmaker,
-                    lambda_home: existing.lambda_home,
-                    lambda_away: existing.lambda_away,
-                    probability: existing.p_model,
-                    market_id: existing.market_id,
-                    checksum: existing.checksum,
-                    // Restore edge_score so homepage filter (edge_score > 0) keeps this match
-                    edge_score: existing.ev_adjusted > 0 ? Math.round(existing.ev_adjusted * 500) : 50,
-                } as Match;
+                // Skip stale predictions (older than 12 hours) to force regeneration
+                // with current engine data, ensuring all metrics are populated.
+                // Frozen (settled) predictions are never skipped.
+                const publishedAge = Date.now() - new Date(existing.published_at).getTime();
+                const STALE_THRESHOLD = 12 * 60 * 60 * 1000; // 12 hours
+                if (!existing.is_frozen && publishedAge > STALE_THRESHOLD) {
+                    // Fall through to engine pipeline below
+                } else {
+                    return {
+                        id: f.id,
+                        home_team: home,
+                        away_team: away,
+                        home_logo: homeP?.image_path || "",
+                        away_logo: awayP?.image_path || "",
+                        start_time: f.starting_at,
+                        league_name: f.league?.name || "League",
+                        league_id: f.league_id,
+                        date: new Date(f.starting_at).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }),
+                        is_live: f.status === "LIVE" || f.status === "INPLAY",
+                        prediction: existing.market,
+                        confidence: existing.confidence,
+                        is_locked: true,
+                        tier: existing.tier as 'elite' | 'safe',
+                        ev_adjusted: existing.ev_adjusted,
+                        edge: existing.edge,
+                        odds: existing.odds,
+                        bet365_odds: existing.bet365_odds,
+                        best_bookmaker: existing.best_bookmaker,
+                        lambda_home: existing.lambda_home,
+                        lambda_away: existing.lambda_away,
+                        probability: existing.p_model,
+                        market_id: existing.market_id,
+                        checksum: existing.checksum,
+                        // Restore edge_score so homepage filter (edge_score > 0) keeps this match
+                        edge_score: existing.ev_adjusted > 0 ? Math.round(existing.ev_adjusted * 500) : 50,
+                    } as Match;
+                }
             }
 
             // Run through engine v2 pipeline
