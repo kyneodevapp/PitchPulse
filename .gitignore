@@ -53,3 +53,6 @@ seed_sheffield.js
 championship.json
 fixtures.json
 fixtures_today.json
+
+# AI tool config
+.claude/
