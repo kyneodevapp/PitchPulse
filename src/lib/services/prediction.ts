@@ -831,6 +831,14 @@ class SportMonksService {
                         checksum: existing.checksum,
                         // Restore edge_score so homepage filter (edge_score > 0) keeps this match
                         edge_score: existing.ev_adjusted > 0 ? Math.round(existing.ev_adjusted * 500) : 50,
+                        // Compute display metrics from available data so production shows real values
+                        model_probability: existing.p_model,
+                        implied_probability: existing.odds > 0 ? 1 / existing.odds : 0,
+                        risk_tier: existing.tier === 'elite' ? 'A+' as const : (existing.ev_adjusted > 0.05 ? 'A' as const : 'B' as const),
+                        suggested_stake: existing.ev_adjusted > 0 ? Math.min(0.05, existing.ev_adjusted * 0.25) : 0,
+                        clv_projection: existing.edge > 0 ? existing.edge * 100 * 0.6 : 0,
+                        simulation_win_freq: existing.p_model > 0 ? Math.round(existing.p_model * 10000) : 0,
+                        ev: existing.ev_adjusted,
                     } as Match;
                 }
             }
