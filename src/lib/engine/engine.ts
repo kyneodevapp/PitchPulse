@@ -480,8 +480,15 @@ export function toMatchPrediction(
  */
 export async function publishPrediction(prediction: MatchPrediction): Promise<string | null> {
     try {
-        const exists = await PredictionHistory.exists(prediction.fixtureId);
-        if (exists) return null;
+        // Allow re-publishing if the existing prediction is stale (not frozen).
+        // This is needed because the staleness check in getFixtures() skips old predictions
+        // and regenerates fresh ones — we need to save those fresh predictions back.
+        const existing = await PredictionHistory.get(prediction.fixtureId);
+        if (existing) {
+            if (existing.is_frozen) return null; // Never overwrite settled predictions
+            // Delete stale record so we can publish fresh data
+            await PredictionHistory.delete(prediction.fixtureId);
+        }
 
         const record = await PredictionHistory.publish({
             fixture_id: prediction.fixtureId,

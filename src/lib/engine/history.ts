@@ -208,6 +208,31 @@ export class PredictionHistory {
         }
     }
 
+    /**
+     * Delete a non-frozen prediction to allow re-publishing with fresh data.
+     */
+    static async delete(fixtureId: number): Promise<boolean> {
+        try {
+            const { createClient } = await import('@supabase/supabase-js');
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+            if (!supabaseUrl || !supabaseKey) return false;
+
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            const { error } = await supabase
+                .from('immutable_predictions')
+                .delete()
+                .eq('fixture_id', fixtureId)
+                .eq('is_frozen', false); // Guard: never delete frozen records
+
+            return !error;
+        } catch (e) {
+            console.error('[PredictionHistory] Delete error:', e);
+            return false;
+        }
+    }
+
     // ============ PRIVATE ============
 
     private static async saveToSupabase(record: ImmutablePrediction): Promise<void> {
