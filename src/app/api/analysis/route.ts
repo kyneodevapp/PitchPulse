@@ -114,11 +114,24 @@ function generateInsight(
 
 export async function GET(request: Request) {
     // Auth guard — must be a signed-in user with an active subscription or active trial
-    const { userId } = await auth();
+    // Note: Clerk middleware is excluded from API routes to avoid breaking SSR data fetching,
+    // so auth() may throw here. We catch and return 401 gracefully.
+    let userId: string | null = null;
+    try {
+        const authResult = await auth();
+        userId = authResult.userId;
+    } catch {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const user = await currentUser();
+    let user;
+    try {
+        user = await currentUser();
+    } catch {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const stripeStatus = user?.publicMetadata?.stripeStatus as string | undefined;
     const createdAt = user?.createdAt ?? 0;
     const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
