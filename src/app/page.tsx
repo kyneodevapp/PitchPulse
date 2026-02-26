@@ -5,10 +5,16 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 import Link from "next/link";
 
 export const revalidate = 120; // ISR: regenerate every 2 min
+export const maxDuration = 60; // Allow up to 60s for heavy API pipeline on Vercel
 
 export default async function Home() {
     // Fetch fixtures for the next 10 days (matches /games/today window)
-    const fixtures = await sportmonksService.getFixtures(10);
+    let fixtures: Match[] = [];
+    try {
+        fixtures = await sportmonksService.getFixtures(10);
+    } catch (e) {
+        console.error('[Home] getFixtures failed:', e);
+    }
 
     // Edge Engine v3: Sort by Edge Score, filter to qualified picks only
     const qualifiedPicks = [...fixtures]

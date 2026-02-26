@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { sportmonksService } from "@/lib/services/prediction";
+import { sportmonksService, Match } from "@/lib/services/prediction";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { TodayGamesClient } from "@/components/match/TodayGamesClient";
 
 export const revalidate = 120; // ISR: regenerate every 2 min
+export const maxDuration = 60; // Allow up to 60s for heavy API pipeline on Vercel
 
 export const metadata: Metadata = {
     title: "Upcoming Predictions",
@@ -18,7 +19,12 @@ export const metadata: Metadata = {
 
 export default async function TodayGamesPage() {
     // Fetch fixtures for the next 10 days for full coverage across all 7 leagues
-    const fixtures = await sportmonksService.getFixtures(10);
+    let fixtures: Match[] = [];
+    try {
+        fixtures = await sportmonksService.getFixtures(10);
+    } catch (e) {
+        console.error('[TodayGamesPage] getFixtures failed:', e);
+    }
 
     return (
         <div className="min-h-screen pt-24 pb-20">

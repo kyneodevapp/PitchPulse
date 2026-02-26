@@ -19,6 +19,7 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://cdn.sportmonks.com https://img.clerk.com https://*.clerk.com",
       "connect-src 'self' https://api.clerk.dev https://clerk.accounts.dev https://*.clerk.accounts.dev https://*.clerk.dev https://api.sportmonks.com https://api.stripe.com",
+      "worker-src 'self' blob:",
       "frame-src https://js.stripe.com https://hooks.stripe.com",
       "object-src 'none'",
       "base-uri 'self'",
