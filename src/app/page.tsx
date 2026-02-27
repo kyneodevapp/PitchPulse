@@ -4,7 +4,7 @@ import { sportmonksService, Match } from "@/lib/services/prediction";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import Link from "next/link";
 
-export const revalidate = 120; // ISR: regenerate every 2 min
+export const revalidate = 600; // ISR: regenerate every 10 min (predictions are daily, no need for 2 min)
 export const maxDuration = 60; // Allow up to 60s for heavy API pipeline on Vercel
 
 export default async function Home() {

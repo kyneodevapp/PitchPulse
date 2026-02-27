@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, History, Menu, X } from "lucide-react";
+import { LayoutDashboard, History, Menu, X, Snowflake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -12,6 +12,7 @@ import { BrandLogo } from "../ui/BrandLogo";
 
 const navItems = [
     { name: "Terminal", href: "/", icon: LayoutDashboard },
+    { name: "ACCA Freeze", href: "/acca-freeze", icon: Snowflake },
     { name: "History", href: "/history", icon: History },
 ];
 

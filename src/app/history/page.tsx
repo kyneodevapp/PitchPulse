@@ -4,14 +4,14 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { HistoryClient } from "@/components/match/HistoryClient";
 
-export const revalidate = 300; // ISR: regenerate every 5 min (history is less time-sensitive)
+export const revalidate = 900; // ISR: regenerate every 15 min (history is static data)
 
 export const metadata: Metadata = {
     title: "Prediction History",
-    description: "Track PitchPulse AI prediction accuracy over the last 3 days across 9 major European leagues. Review hits, misses, and model performance.",
+    description: "Track PitchPulse AI prediction accuracy over the last 3 days across 15 major European leagues. Review hits, misses, and model performance.",
     openGraph: {
         title: "Prediction History | PitchPulse",
-        description: "Track AI prediction accuracy over the last 3 days across 9 major European leagues.",
+        description: "Track AI prediction accuracy over the last 3 days across 15 major European leagues.",
         url: "/history",
     },
 };
@@ -34,7 +34,7 @@ export default async function HistoryPage() {
                         <div>
                             <h1 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tighter uppercase">Prediction <span className="text-[#FBBF24]">History</span></h1>
                             <p className="text-white/40 max-w-2xl font-medium leading-relaxed">
-                                Review our AI prediction accuracy over the last 3 days across all 9 major European leagues.
+                                Review our AI prediction accuracy over the last 3 days across all 15 major European leagues.
                                 Track hits and misses to gauge model performance.
                             </p>
                         </div>

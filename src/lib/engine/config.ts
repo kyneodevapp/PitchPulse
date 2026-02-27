@@ -11,7 +11,7 @@
 export const ENGINE_CONFIG = {
     ODDS_MIN: 1.40,                   // Evaluate markets down to 1.40 (display floor is separate)
     ODDS_MAX: 10.20,
-    ODDS_DISPLAY_MIN: 1.80,           // Hard UI floor — never display below this
+    ODDS_DISPLAY_MIN: 1.20,           // Hard UI floor — never display below this
     MIN_EDGE_PCT: 0.02,               // 2% minimum edge over implied probability
     MIN_EV_THRESHOLD: 0.02,           // +2% minimum expected value
     MIN_CONFIDENCE: 45,               // Minimum confidence score (0-100)
@@ -96,12 +96,18 @@ export const LEAGUE_HOME_ADVANTAGES: Record<number, number> = {
     2: 1.10,    // Champions League
     5: 1.08,    // Europa League  
     8: 1.09,    // Premier League
-    9: 1.12,    // La Liga
-    564: 1.11,  // Serie A
-    567: 1.08,  // Bundesliga
-    82: 1.10,   // Ligue 1
-    384: 1.09,  // Championship
-    387: 1.08,  // Eredivisie
+    9: 1.07,    // Championship
+    564: 1.12,  // La Liga
+    567: 1.10,  // La Liga 2
+    82: 1.10,   // Bundesliga
+    384: 1.11,  // Serie A
+    387: 1.09,  // Serie B
+    301: 1.08,  // Ligue 1
+    72: 1.09,   // Eredivisie
+    501: 1.12,  // Scottish Premiership
+    462: 1.10,  // Liga Portugal
+    600: 1.14,  // Süper Lig (strong home advantage)
+    208: 1.09,  // Belgian Pro League
 };
 
 // ============ VARIANCE MULTIPLIERS ============
@@ -222,4 +228,4 @@ export const MIN_BOOKMAKER_COUNT = 2;
 
 // ============ LEAGUE IDS ============
 
-export const SUPPORTED_LEAGUE_IDS = [2, 5, 8, 9, 564, 567, 82, 384, 387] as const;
+export const SUPPORTED_LEAGUE_IDS = [2, 5, 8, 9, 564, 567, 82, 384, 387, 301, 72, 501, 462, 600, 208] as const;

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useSubscription } from "@/lib/hooks/useSubscription";
 import { Paywall } from "./Paywall";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 // ============ TYPES ============
 
@@ -464,7 +465,7 @@ export function MatchAnalysisModal({
                                         {/* Home Team */}
                                         <div className="flex-1 flex flex-col items-center gap-2 md:gap-3">
                                             <div className="w-20 h-20 md:w-28 md:h-28 bg-[#111827] rounded-xl p-2 md:p-4 border border-[#1F2937] shadow-lg">
-                                                <img src={homeLogo} alt={homeTeam} className="w-full h-full object-contain" />
+                                                <Image src={homeLogo || ""} alt={homeTeam} width={48} height={48} className="w-full h-full object-contain" />
                                             </div>
                                             <h2 className="text-sm md:text-lg font-bold text-white tracking-tight text-center max-w-[100px] md:max-w-none line-clamp-2">
                                                 {homeTeam}
@@ -488,7 +489,7 @@ export function MatchAnalysisModal({
                                         {/* Away Team */}
                                         <div className="flex-1 flex flex-col items-center gap-2 md:gap-3">
                                             <div className="w-20 h-20 md:w-28 md:h-28 bg-[#111827] rounded-xl p-2 md:p-4 border border-[#1F2937] shadow-lg">
-                                                <img src={awayLogo} alt={awayTeam} className="w-full h-full object-contain" />
+                                                <Image src={awayLogo || ""} alt={awayTeam} width={48} height={48} className="w-full h-full object-contain" />
                                             </div>
                                             <h2 className="text-sm md:text-lg font-bold text-white tracking-tight text-center max-w-[100px] md:max-w-none line-clamp-2">
                                                 {awayTeam}

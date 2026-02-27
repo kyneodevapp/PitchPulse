@@ -4,15 +4,15 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { TodayGamesClient } from "@/components/match/TodayGamesClient";
 
-export const revalidate = 120; // ISR: regenerate every 2 min
+export const revalidate = 600; // ISR: regenerate every 10 min (predictions are daily, no need for 2 min)
 export const maxDuration = 60; // Allow up to 60s for heavy API pipeline on Vercel
 
 export const metadata: Metadata = {
     title: "Upcoming Predictions",
-    description: "AI-powered football predictions for the next 10 days across 9 major European leagues. UCL, Europa League, Premier League, and more.",
+    description: "AI-powered football predictions for the next 10 days across 15 major European leagues. UCL, Europa League, Premier League, and more.",
     openGraph: {
         title: "Upcoming Predictions | PitchPulse",
-        description: "AI-powered football predictions for the next 10 days across 9 major European leagues.",
+        description: "AI-powered football predictions for the next 10 days across 15 major European leagues.",
         url: "/games/today",
     },
 };
@@ -41,13 +41,13 @@ export default async function TodayGamesPage() {
                         <div>
                             <h1 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tighter uppercase">Upcoming <span className="text-[#FBBF24]">Predictions</span></h1>
                             <p className="text-white/40 max-w-2xl font-medium leading-relaxed">
-                                Professional AI analysis for the upcoming 10 days across all 9 major European leagues.
+                                Professional AI analysis for the upcoming 10 days across all 15 major European leagues.
                                 Real-time dynamic coverage for the UCL, Europa League, Premier League, and more.
                             </p>
                         </div>
                         <div className="bg-[#111827] border border-[#1F2937] rounded-xl px-6 py-4 shadow-lg group hover:border-amber-400/50 transition-colors">
                             <span className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.3em] block mb-1">Coverage</span>
-                            <span className="text-white font-bold text-lg">9 Global Leagues</span>
+                            <span className="text-white font-bold text-lg">15 Global Leagues</span>
                         </div>
                     </div>
                 </div>
