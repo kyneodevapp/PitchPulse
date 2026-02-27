@@ -1,6 +1,8 @@
 import { Snowflake, ShieldCheck, Info } from "lucide-react";
-import type { AccaFreeze } from "@/lib/engine/accaFreeze";
 import { AccaFreezeCard } from "@/components/match/AccaFreezeCard";
+import { sportmonksService } from "@/lib/services/prediction";
+import { deriveWinPredictions } from "@/lib/engine/accaService";
+import { filterSafeLegs, filterFreezeLegs, buildAccas } from "@/lib/engine/accaFreeze";
 
 export const revalidate = 600; // ISR: regenerate every 10 min
 export const maxDuration = 60;
@@ -11,37 +13,36 @@ export const metadata = {
         "Curated 5-fold WIN accumulators optimized for SkyBet Acca Freeze. 4 safe legs + 1 freeze leg for maximum edge.",
 };
 
-interface AccaFreezeApiResponse {
-    accas: AccaFreeze[];
-    meta: {
-        totalPredictions: number;
-        safeLegsAvailable: number;
-        freezeLegsAvailable: number;
-        generatedAt: string;
-    };
-}
-
-async function fetchAccas(): Promise<AccaFreezeApiResponse> {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
-        ? process.env.NEXT_PUBLIC_SITE_URL
-        : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-
+async function getAccaData() {
     try {
-        // Force bypass any stale Vercel Data Cache during this investigation
-        const res = await fetch(`${baseUrl}/api/acca-freeze?t=${Date.now()}`, {
-            cache: 'no-store',
-            next: { revalidate: 0 },
-        });
-        if (!res.ok) throw new Error(`API returned ${res.status}`);
-        return res.json();
+        // Fetch fixtures directly (bypass internal API fetch)
+        const fixtures = await sportmonksService.getFixtures(3, true);
+        const winPredictions = await deriveWinPredictions(fixtures);
+
+        const safeLegs = filterSafeLegs(winPredictions);
+        const freezeLegs = filterFreezeLegs(winPredictions);
+        const accas = buildAccas(safeLegs, freezeLegs, 10);
+
+        return {
+            accas,
+            meta: {
+                totalPredictions: winPredictions.length,
+                safeLegsAvailable: safeLegs.length,
+                freezeLegsAvailable: freezeLegs.length,
+                generatedAt: new Date().toISOString(),
+            },
+        };
     } catch (e) {
-        console.error("[ACCA Freeze Page] Fetch error:", e);
-        return { accas: [], meta: { totalPredictions: 0, safeLegsAvailable: 0, freezeLegsAvailable: 0, generatedAt: new Date().toISOString() } };
+        console.error("[ACCA Freeze Page] Data error:", e);
+        return {
+            accas: [],
+            meta: { totalPredictions: 0, safeLegsAvailable: 0, freezeLegsAvailable: 0, generatedAt: new Date().toISOString() }
+        };
     }
 }
 
 export default async function AccaFreezePage() {
-    const { accas, meta } = await fetchAccas();
+    const { accas, meta } = await getAccaData();
 
     return (
         <div className="flex flex-col bg-[#0B0F14] min-h-screen">
