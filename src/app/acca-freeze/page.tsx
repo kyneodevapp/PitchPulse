@@ -22,13 +22,15 @@ interface AccaFreezeApiResponse {
 }
 
 async function fetchAccas(): Promise<AccaFreezeApiResponse> {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+        ? process.env.NEXT_PUBLIC_SITE_URL
+        : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
     try {
-        const res = await fetch(`${baseUrl}/api/acca-freeze`, {
-            next: { revalidate: 300 },
+        // Force bypass any stale Vercel Data Cache during this investigation
+        const res = await fetch(`${baseUrl}/api/acca-freeze?t=${Date.now()}`, {
+            cache: 'no-store',
+            next: { revalidate: 0 },
         });
         if (!res.ok) throw new Error(`API returned ${res.status}`);
         return res.json();
