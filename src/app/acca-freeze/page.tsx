@@ -102,6 +102,22 @@ export default async function AccaFreezePage() {
 
             {/* ACCA Cards */}
             <section className="container mx-auto px-4 pb-24">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-neutral-500">
+                        <div className="flex items-center gap-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-400">{meta.safeLegsAvailable}</span>
+                            <span>Safe Legs</span>
+                        </div>
+                        <div className="w-1 h-1 rounded-full bg-neutral-800" />
+                        <div className="flex items-center gap-1.5">
+                            <Snowflake className="w-3.5 h-3.5 text-cyan-400" />
+                            <span className="text-cyan-400">{meta.freezeLegsAvailable}</span>
+                            <span>Freeze Legs</span>
+                        </div>
+                    </div>
+                </div>
+
                 {accas.length > 0 ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {accas.map((acca, i) => (
@@ -117,9 +133,6 @@ export default async function AccaFreezePage() {
                         <p className="text-neutral-400 text-sm mb-2 max-w-md mx-auto">
                             The engine needs at least 4 qualifying safe legs (WIN markets, odds 1.20–2.00)
                             and 1 freeze leg (odds 2.50–20.50) to build an ACCA.
-                        </p>
-                        <p className="text-neutral-500 text-xs">
-                            {meta.safeLegsAvailable} safe legs • {meta.freezeLegsAvailable} freeze legs available
                         </p>
                     </div>
                 )}
