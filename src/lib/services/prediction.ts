@@ -698,9 +698,27 @@ class SportMonksService {
 
         // Filter by label (e.g., "Over" or "Home")
         if (labelMatch && relevantOdds.length > 0) {
-            const labelFiltered = relevantOdds.filter((o: any) =>
-                o.label?.toLowerCase() === labelMatch!.toLowerCase()
-            );
+            const l = labelMatch.toLowerCase();
+            const labelFiltered = relevantOdds.filter((o: any) => {
+                const ol = o.label?.toLowerCase() || "";
+                if (ol === l) return true;
+
+                // Common SportMonks Aliases for Market 1 (Match Winner)
+                if (marketIds.includes(1)) {
+                    if (l === "home" && ol === "1") return true;
+                    if (l === "away" && ol === "2") return true;
+                    if (l === "draw" && ol === "x") return true;
+                }
+
+                // Common SportMonks Aliases for Market 10 (DNB)
+                if (marketIds.includes(10)) {
+                    if (l === "1" && ol === "home") return true;
+                    if (l === "2" && ol === "away") return true;
+                }
+
+                return false;
+            });
+
             if (labelFiltered.length > 0) {
                 relevantOdds = labelFiltered;
             } else {

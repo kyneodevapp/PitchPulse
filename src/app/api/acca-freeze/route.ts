@@ -50,8 +50,13 @@ async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPrediction[
                     f.id, m.label, f.home_team, f.away_team
                 );
                 odds = result.best?.odds || result.bet365 || 0;
-            } catch {
-                odds = m.prob > 0 ? Math.round((1 / m.prob) * 105) / 100 : 0; // Fair + 5% vig fallback
+            } catch (e) {
+                console.warn(`[ACCA API] Odds fetch failed for ${m.label} (ID: ${f.id}):`, e);
+            }
+
+            // Fallback to fair odds if bookmaker odds are unavailable
+            if (odds === 0 && m.prob > 0) {
+                odds = Math.round((1 / m.prob) * 105) / 100; // Fair + 5% vig
             }
 
             if (odds > 0) {
