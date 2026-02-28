@@ -897,8 +897,13 @@ class SportMonksService {
                             probability: existing.p_model,
                             market_id: existing.market_id,
                             checksum: existing.checksum,
-                            // Restore edge_score so homepage filter (edge_score > 0) keeps this match
-                            edge_score: existing.ev_adjusted > 0 ? Math.round(existing.ev_adjusted * 500) : 50,
+                            // Edge Engine v3 Alignment: Unify scoring via 0-100 capped logic
+                            // Component approximations for v2 history (missing CLV/Risk)
+                            edge_score: Math.min(100, Math.max(0,
+                                (existing.ev_adjusted * 500 * 0.40) + // EV @ 40% weight
+                                (existing.edge * 666 * 0.35) +        // Edge @ 35% weight
+                                25                                    // Static 25 pts for stability/volatility
+                            )),
                             // Compute display metrics from available data so production shows real values
                             model_probability: existing.p_model,
                             implied_probability: existing.odds > 0 ? 1 / existing.odds : 0,
