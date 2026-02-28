@@ -20,6 +20,7 @@ export type LegStatus = 'pending' | 'won' | 'lost' | 'void';
 
 export interface AccaLeg {
     fixtureId: number;
+    marketId: string;
     team: string;
     odds: number;
     probability: number;
@@ -58,8 +59,8 @@ export interface AccaFreeze {
 
 const SAFE_ODDS_MIN = 1.20;
 const SAFE_ODDS_MAX = 2.00;
-const FREEZE_ODDS_MIN = 2.50;
-const FREEZE_ODDS_MAX = 20.50;
+const FREEZE_ODDS_MIN = 3.00;
+const FREEZE_ODDS_MAX = 22.50;
 const MIN_EDGE_SCORE = 2.0;
 const MAX_SAME_LEAGUE = 2;
 const SAFE_LEG_COUNT = 4;
@@ -79,6 +80,7 @@ function predictionToLeg(pick: MatchPrediction, isFreezeLeg: boolean): AccaLeg {
 
     return {
         fixtureId: pick.fixtureId,
+        marketId: pick.marketId,
         team,
         odds: pick.odds,
         probability: pick.probability,
@@ -128,20 +130,60 @@ export function filterSafeLegs(picks: MatchPrediction[]): AccaLeg[] {
 }
 
 /**
- * Filter predictions to freeze legs: WIN-only, odds 2.50–20.50.
- * Sorted by lowest probability (hardest to hit first).
+ * Filter predictions to freeze legs: WIN-only, odds 3.00–22.50.
+ * Refined for "Score First" strategy:
+ *   - Edge Score ≥ 3.0
+ *   - Score First Probability (λ_predicted / λ_total) ≥ 0.55
+ *   - DE-DUPLICATED: Each match appears only once in the pool.
+ * Sorted by highest Score First probability for the underdog.
  */
 export function filterFreezeLegs(picks: MatchPrediction[]): AccaLeg[] {
-    const winPicks = picks.filter(p =>
+    // 1. Filter all matches that are win markets and in odds range
+    const allCandidates = picks.filter(p =>
         WIN_MARKET_IDS.includes(p.marketId) &&
         p.odds >= FREEZE_ODDS_MIN &&
         p.odds <= FREEZE_ODDS_MAX
     );
 
-    // Sort by probability ascending (hardest to hit first)
-    winPicks.sort((a, b) => a.probability - b.probability);
+    // 2. De-duplicate by fixtureId (keep best market per fixture based on Score First probability)
+    const uniqueFixtures = new Map<number, MatchPrediction>();
+    for (const p of allCandidates) {
+        const totalLambda = p.lambdaHome + p.lambdaAway;
+        const predictedLambda = p.marketId.includes('home') ? p.lambdaHome : p.lambdaAway;
+        const currentScoreFirstProb = totalLambda > 0 ? predictedLambda / totalLambda : 0;
 
-    return winPicks.map(p => predictionToLeg(p, true));
+        const existing = uniqueFixtures.get(p.fixtureId);
+        if (!existing) {
+            uniqueFixtures.set(p.fixtureId, p);
+        } else {
+            const existingTotalLambda = existing.lambdaHome + existing.lambdaAway;
+            const existingPredictedLambda = existing.marketId.includes('home') ? existing.lambdaHome : existing.lambdaAway;
+            const existingScoreFirstProb = existingTotalLambda > 0 ? existingPredictedLambda / existingTotalLambda : 0;
+
+            if (currentScoreFirstProb > existingScoreFirstProb) {
+                uniqueFixtures.set(p.fixtureId, p);
+            }
+        }
+    }
+
+    const freezePicks = Array.from(uniqueFixtures.values());
+
+    // 3. Rank by "Freeze Potential": Score First Probability weighted by Underdog Odds
+    // Formula: ScoreFirstProb * (1 + Odds/20) - Prioritizes high-odds "lightning strikes"
+    freezePicks.sort((a, b) => {
+        const getScore = (p: MatchPrediction) => {
+            const totalLambda = p.lambdaHome + p.lambdaAway;
+            const predLambda = p.marketId.includes('home') ? p.lambdaHome : p.lambdaAway;
+            const firstProb = totalLambda > 0 ? predLambda / totalLambda : 0;
+            // Weighted by odds to favor the "weaker" team as requested
+            return firstProb * (1 + (p.odds / 20));
+        };
+
+        return getScore(b) - getScore(a);
+    });
+
+    // 4. Take top 15 premium picks
+    return freezePicks.slice(0, 15).map(p => predictionToLeg(p, true));
 }
 
 // ============ SCORING ============

@@ -175,8 +175,8 @@ export const PROBABILITY_CALIBRATION: Record<string, number> = {
     'btts_home_win': 1.15,
     'btts_away_win': 1.15,
     // DNB — reduce to prevent dominance
-    'draw_no_bet': 0.92,
-    'draw_no_bet_away': 0.92,
+    'draw_no_bet': 0.82,
+    'draw_no_bet_away': 0.82,
     // 1st Half
     '1h_over_1.5': 1.12,
     '1h_over_2.5': 1.15,
