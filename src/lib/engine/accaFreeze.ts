@@ -157,7 +157,8 @@ export function filterFreezeLegs(picks: MatchPrediction[]): AccaLeg[] {
     const allCandidates = picks.filter(p =>
         WIN_MARKET_IDS.includes(p.marketId) &&
         p.odds >= FREEZE_ODDS_MIN &&
-        p.odds <= FREEZE_ODDS_MAX
+        p.odds <= FREEZE_ODDS_MAX &&
+        p.edgeScore >= 3.0
     );
 
     // 2. De-duplicate by fixtureId (keep best market per fixture based on Score First probability)

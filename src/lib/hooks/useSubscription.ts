@@ -15,21 +15,25 @@ export function useSubscription() {
         };
     }
 
-    const stripeStatus = user.publicMetadata.stripeStatus as string;
-    // const isSubscribed = stripeStatus === "active";
+    const stripeStatus = user.publicMetadata.stripeStatus as string | undefined;
+    const isVip = user.publicMetadata.isVip === true;
 
-    // TEMPORARY: Grant full access to all logged-in users
-    const isSubscribed = true;
+    // A user is "subscribed" if they have an active subscription, are trialing, or are a VIP
+    const isSubscribed = stripeStatus === "active" || stripeStatus === "trialing" || isVip;
 
-    // 7-day trial logic (Disabled for now, but kept underlying vars stable)
+    // Stripe trial logic
+    const trialActive = stripeStatus === "trialing";
+
+    // Legacy trial logic (as a fallback or for UI if needed)
     const createdAt = user.createdAt ? new Date(user.createdAt).getTime() : Date.now();
     const now = Date.now();
     const trialDuration = 7 * 24 * 60 * 60 * 1000;
     const trialEndsAt = createdAt + trialDuration;
-
-    const trialActive = true; // Always active for full access
     const daysLeft = Math.max(0, Math.ceil((trialEndsAt - now) / (1000 * 60 * 60 * 24)));
-    const isTrialExpired = false; // Never expired for now
+
+    // A trial is expired if they aren't subscribed/trialing and it's been > 7 days since signup
+    // UNLESS they are a VIP.
+    const isTrialExpired = !isSubscribed && now > trialEndsAt && !isVip;
 
     return {
         isLoaded: true,
@@ -37,5 +41,6 @@ export function useSubscription() {
         trialActive,
         daysLeft,
         isTrialExpired,
+        isVip,
     };
 }

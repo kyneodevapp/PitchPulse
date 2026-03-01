@@ -28,9 +28,9 @@ export async function GET() {
         metadata: {
             userId,
         },
-        // Adding 7-day trial purely in Stripe if they haven't used it, 
-        // but the surgical plan is to control trials via code for maximum flexibility.
-        // However, for £8.99/mo, we'll let Stripe handle the billing cycle.
+        subscription_data: {
+            trial_period_days: 7,
+        },
     });
 
     return NextResponse.redirect(stripeSession.url!);

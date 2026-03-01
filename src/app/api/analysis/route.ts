@@ -133,13 +133,14 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const stripeStatus = user?.publicMetadata?.stripeStatus as string | undefined;
+    const isVip = user?.publicMetadata?.isVip === true;
     const createdAt = user?.createdAt ?? 0;
-    // const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
+    const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
 
-    // TEMPORARY: Allow all authenticated users
-    // if (stripeStatus !== "active" && !isInTrial) {
-    //     return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
-    // }
+    // Enforce: Must be active, trialing (Stripe), in 7-day signup trial, or a VIP
+    if (stripeStatus !== "active" && stripeStatus !== "trialing" && !isInTrial && !isVip) {
+        return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
+    }
 
     // Rate limit: 30 analysis requests per user per minute
     const rl = rateLimit(`analysis:${userId}`, { limit: 30, windowMs: 60_000 });

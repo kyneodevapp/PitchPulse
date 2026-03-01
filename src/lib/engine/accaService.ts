@@ -7,9 +7,10 @@ import type { MatchPrediction } from "@/lib/engine/engine";
  * probabilities from its Poisson lambdas, then fetch REAL bookmaker match-winner odds.
  */
 export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPrediction[]> {
-    const predictionMap = new Map<number, MatchPrediction>();
+    const allPredictions: MatchPrediction[] = [];
 
     for (const f of fixtures) {
+        // ... (lambda check and matrix build)
         const lambdaHome = f.lambda_home;
         const lambdaAway = f.lambda_away;
         if (!lambdaHome || !lambdaAway) continue;
@@ -17,7 +18,6 @@ export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPred
         const scoreMatrix = buildScoreMatrix(lambdaHome, lambdaAway);
         const probs = deriveMarketProbabilities(scoreMatrix);
 
-        // Odds fetching results for multiple markets
         const marketsToFetch = [
             { id: 'result_home', label: `${f.home_team} Win`, prob: probs.home_win },
             { id: 'result_away', label: `${f.away_team} Win`, prob: probs.away_win },
@@ -26,11 +26,12 @@ export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPred
         ];
 
         for (const m of marketsToFetch) {
-            if (m.prob < 0.10) continue;
+            // Lower threshold to 4% to allow longshots (odds up to 25.0) for Freeze pool
+            if (m.prob < 0.04) continue;
 
             let odds = 0;
+            // ... (odds fetching logic)
             try {
-                // If fixture already has an engine-verified odds value for this market, use it to ensure consistency
                 if (f.prediction === m.label && (f.odds ?? 0) > 0) {
                     odds = f.odds!;
                 } else {
@@ -43,16 +44,15 @@ export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPred
                 console.warn(`[ACCA Service] Odds fetch failed for ${m.label} (ID: ${f.id}):`, e);
             }
 
-            // Fallback to fair odds if bookmaker odds are unavailable
             if (odds === 0 && m.prob > 0) {
-                odds = Math.round((1 / m.prob) * 105) / 100; // Fair + 5% vig
+                odds = Math.round((1 / m.prob) * 105) / 100;
             }
 
             if (odds > 0) {
                 const impliedProb = 1 / odds;
                 const edge = m.prob - impliedProb;
 
-                const pred: MatchPrediction = {
+                allPredictions.push({
                     fixtureId: f.id,
                     homeTeam: f.home_team,
                     awayTeam: f.away_team,
@@ -83,16 +83,10 @@ export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPred
                     isLocked: false,
                     suggestedStake: 0,
                     riskTier: "B",
-                };
-
-                // Deduplicate: Keep the best probability win market per fixture
-                const existing = predictionMap.get(f.id);
-                if (!existing || pred.probability > existing.probability) {
-                    predictionMap.set(f.id, pred);
-                }
+                });
             }
         }
     }
 
-    return Array.from(predictionMap.values());
+    return allPredictions;
 }

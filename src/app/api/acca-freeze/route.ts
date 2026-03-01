@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { sportmonksService, Match } from "@/lib/services/prediction";
 import type { MatchPrediction } from "@/lib/engine/engine";
 import {
@@ -16,6 +17,21 @@ export const revalidate = 600; // ISR: regenerate every 10 min
 import { deriveWinPredictions } from "@/lib/engine/accaService";
 
 export async function GET() {
+    const { userId } = await auth();
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await currentUser();
+    const stripeStatus = user?.publicMetadata?.stripeStatus as string | undefined;
+    const isVip = user?.publicMetadata?.isVip === true;
+    const createdAt = user?.createdAt ?? 0;
+    const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
+
+    if (stripeStatus !== "active" && stripeStatus !== "trialing" && !isInTrial && !isVip) {
+        return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
+    }
+
     try {
         // Fetch today's fixtures through the existing pipeline
         // This gives us lambdas, odds, and all engine data

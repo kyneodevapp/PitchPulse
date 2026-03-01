@@ -10,13 +10,13 @@ export async function GET(request: Request) {
     }
     const user = await currentUser();
     const stripeStatus = user?.publicMetadata?.stripeStatus as string | undefined;
+    const isVip = user?.publicMetadata?.isVip === true;
     const createdAt = user?.createdAt ?? 0;
-    // const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
+    const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
 
-    // TEMPORARY: Allow all authenticated users
-    // if (stripeStatus !== "active" && !isInTrial) {
-    //     return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
-    // }
+    if (stripeStatus !== "active" && stripeStatus !== "trialing" && !isInTrial && !isVip) {
+        return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
+    }
 
     // Rate limit: 60 odds requests per user per minute
     const rl = rateLimit(`odds:${userId}`, { limit: 60, windowMs: 60_000 });

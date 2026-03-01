@@ -19,7 +19,7 @@ const navItems = [
 export function Navbar() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const { isSubscribed, trialActive, daysLeft } = useSubscription();
+    const { isSubscribed, trialActive, daysLeft, isVip } = useSubscription();
 
     // Clerk auth state is only known client-side. Rendering auth buttons only
     // after mount prevents a server/client structural mismatch (hydration error).
@@ -71,13 +71,20 @@ export function Navbar() {
                                 </SignedOut>
                                 <SignedIn>
                                     <div className="flex items-center gap-4">
-                                        {/* TEMPORARY: Hide trial status as all users have full access */}
-                                        {/* {!isSubscribed && trialActive && (
+                                        {isVip && (
                                             <div className="hidden lg:flex flex-col items-end">
-                                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest">Pro Status</span>
+                                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest">VIP Member</span>
+                                                <span className="text-[8px] font-bold text-neutral-500 uppercase">Lifetime Access</span>
+                                            </div>
+                                        )}
+                                        {(!isSubscribed || trialActive) && !isVip && (
+                                            <div className="hidden lg:flex flex-col items-end">
+                                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest">
+                                                    {isSubscribed ? "Pro Status" : "Trial Active"}
+                                                </span>
                                                 <span className="text-[8px] font-bold text-neutral-500 uppercase">{daysLeft} Days Remain</span>
                                             </div>
-                                        )} */}
+                                        )}
                                         <UserButton
                                             appearance={{
                                                 elements: {

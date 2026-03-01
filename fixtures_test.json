@@ -1,0 +1,1107 @@
+﻿{
+    "data":  [
+                 {
+                     "id":  19439516,
+                     "sport_id":  1,
+                     "league_id":  564,
+                     "season_id":  25659,
+                     "stage_id":  77476930,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  373236,
+                     "state_id":  1,
+                     "venue_id":  56,
+                     "name":  "Osasuna vs Mallorca",
+                     "starting_at":  "2026-03-07 13:00:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772888400,
+                     "participants":  [
+                                          {
+                                              "id":  459,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  56,
+                                              "gender":  "male",
+                                              "name":  "Osasuna",
+                                              "short_code":  "OSA",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/11/459.png",
+                                              "founded":  1920,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-03-01 15:15:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  645,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  343495,
+                                              "gender":  "male",
+                                              "name":  "Mallorca",
+                                              "short_code":  "MLL",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/5/645.png",
+                                              "founded":  1916,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 17:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  564,
+                                    "sport_id":  1,
+                                    "country_id":  32,
+                                    "name":  "La Liga",
+                                    "active":  true,
+                                    "short_code":  "ESP PL",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/20/564.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 17:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19433691,
+                     "sport_id":  1,
+                     "league_id":  82,
+                     "season_id":  25646,
+                     "stage_id":  77476914,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  393443,
+                     "state_id":  1,
+                     "venue_id":  1670,
+                     "name":  "Heidenheim vs TSG Hoffenheim",
+                     "starting_at":  "2026-03-07 14:30:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772893800,
+                     "participants":  [
+                                          {
+                                              "id":  2831,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  1670,
+                                              "gender":  "male",
+                                              "name":  "Heidenheim",
+                                              "short_code":  "HDH",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/15/2831.png",
+                                              "founded":  1946,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 14:30:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  2726,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  1618,
+                                              "gender":  "male",
+                                              "name":  "TSG Hoffenheim",
+                                              "short_code":  "TSG",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/6/2726.png",
+                                              "founded":  1899,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 14:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  82,
+                                    "sport_id":  1,
+                                    "country_id":  11,
+                                    "name":  "Bundesliga",
+                                    "active":  true,
+                                    "short_code":  "GER BI",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/18/82.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 18:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19433694,
+                     "sport_id":  1,
+                     "league_id":  82,
+                     "season_id":  25646,
+                     "stage_id":  77476914,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  393443,
+                     "state_id":  1,
+                     "venue_id":  2103,
+                     "name":  "FSV Mainz 05 vs VfB Stuttgart",
+                     "starting_at":  "2026-03-07 14:30:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772893800,
+                     "participants":  [
+                                          {
+                                              "id":  794,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  2103,
+                                              "gender":  "male",
+                                              "name":  "FSV Mainz 05",
+                                              "short_code":  "M05",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/26/794.png",
+                                              "founded":  1905,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 14:30:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  3319,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  1945,
+                                              "gender":  "male",
+                                              "name":  "VfB Stuttgart",
+                                              "short_code":  "VFB",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/23/3319.png",
+                                              "founded":  1893,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-03-01 14:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  82,
+                                    "sport_id":  1,
+                                    "country_id":  11,
+                                    "name":  "Bundesliga",
+                                    "active":  true,
+                                    "short_code":  "GER BI",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/18/82.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 18:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19433697,
+                     "sport_id":  1,
+                     "league_id":  82,
+                     "season_id":  25646,
+                     "stage_id":  77476914,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  393443,
+                     "state_id":  1,
+                     "venue_id":  2171,
+                     "name":  "RB Leipzig vs FC Augsburg",
+                     "starting_at":  "2026-03-07 14:30:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772893800,
+                     "participants":  [
+                                          {
+                                              "id":  277,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  2171,
+                                              "gender":  "male",
+                                              "name":  "RB Leipzig",
+                                              "short_code":  "RBL",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/21/277.png",
+                                              "founded":  2009,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-03-01 18:30:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  90,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  2165,
+                                              "gender":  "male",
+                                              "name":  "FC Augsburg",
+                                              "short_code":  "FCA",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/26/90.png",
+                                              "founded":  1907,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-27 19:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  82,
+                                    "sport_id":  1,
+                                    "country_id":  11,
+                                    "name":  "Bundesliga",
+                                    "active":  true,
+                                    "short_code":  "GER BI",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/18/82.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 18:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19433698,
+                     "sport_id":  1,
+                     "league_id":  82,
+                     "season_id":  25646,
+                     "stage_id":  77476914,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  393443,
+                     "state_id":  1,
+                     "venue_id":  2063,
+                     "name":  "SC Freiburg vs Bayer 04 Leverkusen",
+                     "starting_at":  "2026-03-07 14:30:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772893800,
+                     "participants":  [
+                                          {
+                                              "id":  3543,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  2063,
+                                              "gender":  "male",
+                                              "name":  "SC Freiburg",
+                                              "short_code":  "SCF",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/23/3543.png",
+                                              "founded":  1904,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-03-01 16:30:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  3321,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  1947,
+                                              "gender":  "male",
+                                              "name":  "Bayer 04 Leverkusen",
+                                              "short_code":  "B04",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/25/3321.png",
+                                              "founded":  1904,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 14:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  82,
+                                    "sport_id":  1,
+                                    "country_id":  11,
+                                    "name":  "Bundesliga",
+                                    "active":  true,
+                                    "short_code":  "GER BI",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/18/82.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 18:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19433699,
+                     "sport_id":  1,
+                     "league_id":  82,
+                     "season_id":  25646,
+                     "stage_id":  77476914,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  393443,
+                     "state_id":  1,
+                     "venue_id":  80,
+                     "name":  "VfL Wolfsburg vs Hamburger SV",
+                     "starting_at":  "2026-03-07 14:30:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772893800,
+                     "participants":  [
+                                          {
+                                              "id":  510,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  80,
+                                              "gender":  "male",
+                                              "name":  "VfL Wolfsburg",
+                                              "short_code":  "WOB",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/30/510.png",
+                                              "founded":  1945,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-03-01 14:30:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  2708,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  1610,
+                                              "gender":  "male",
+                                              "name":  "Hamburger SV",
+                                              "short_code":  "HSV",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/20/2708.png",
+                                              "founded":  1887,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-03-01 18:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  82,
+                                    "sport_id":  1,
+                                    "country_id":  11,
+                                    "name":  "Bundesliga",
+                                    "active":  true,
+                                    "short_code":  "GER BI",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/18/82.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 18:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19439515,
+                     "sport_id":  1,
+                     "league_id":  564,
+                     "season_id":  25659,
+                     "stage_id":  77476930,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  373236,
+                     "state_id":  1,
+                     "venue_id":  2015,
+                     "name":  "Levante vs Girona",
+                     "starting_at":  "2026-03-07 15:15:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772896500,
+                     "participants":  [
+                                          {
+                                              "id":  231,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  9345,
+                                              "gender":  "male",
+                                              "name":  "Girona",
+                                              "short_code":  "GIR",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/7/231.png",
+                                              "founded":  1930,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-23 20:00:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  3457,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  2015,
+                                              "gender":  "male",
+                                              "name":  "Levante",
+                                              "short_code":  "LVT",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/1/3457.png",
+                                              "founded":  1909,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-27 20:00:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  564,
+                                    "sport_id":  1,
+                                    "country_id":  32,
+                                    "name":  "La Liga",
+                                    "active":  true,
+                                    "short_code":  "ESP PL",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/20/564.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 17:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19441385,
+                     "sport_id":  1,
+                     "league_id":  567,
+                     "season_id":  25673,
+                     "stage_id":  77476943,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  373506,
+                     "state_id":  1,
+                     "venue_id":  9342,
+                     "name":  "Huesca vs Albacete",
+                     "starting_at":  "2026-03-07 15:15:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772896500,
+                     "participants":  [
+                                          {
+                                              "id":  274,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  9342,
+                                              "gender":  "male",
+                                              "name":  "Huesca",
+                                              "short_code":  "HUE",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/18/274.png",
+                                              "founded":  1922,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 17:30:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  3169,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  1856,
+                                              "gender":  "male",
+                                              "name":  "Albacete",
+                                              "short_code":  "ALB",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/1/3169.png",
+                                              "founded":  1940,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-27 19:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  567,
+                                    "sport_id":  1,
+                                    "country_id":  32,
+                                    "name":  "La Liga 2",
+                                    "active":  true,
+                                    "short_code":  "ESP S",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/23/567.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 17:30:00",
+                                    "category":  2,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19441390,
+                     "sport_id":  1,
+                     "league_id":  567,
+                     "season_id":  25673,
+                     "stage_id":  77476943,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  373506,
+                     "state_id":  1,
+                     "venue_id":  133,
+                     "name":  "Real Sociedad II vs Castellón",
+                     "starting_at":  "2026-03-07 15:15:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772896500,
+                     "participants":  [
+                                          {
+                                              "id":  9656,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  6312,
+                                              "gender":  "male",
+                                              "name":  "Real Sociedad II",
+                                              "short_code":  null,
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/24/9656.png",
+                                              "founded":  0,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-03-01 13:00:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  10008,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  6572,
+                                              "gender":  "male",
+                                              "name":  "Castellón",
+                                              "short_code":  null,
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/24/10008.png",
+                                              "founded":  1922,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 20:00:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  567,
+                                    "sport_id":  1,
+                                    "country_id":  32,
+                                    "name":  "La Liga 2",
+                                    "active":  true,
+                                    "short_code":  "ESP S",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/23/567.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 17:30:00",
+                                    "category":  2,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19433692,
+                     "sport_id":  1,
+                     "league_id":  82,
+                     "season_id":  25646,
+                     "stage_id":  77476914,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  393443,
+                     "state_id":  1,
+                     "venue_id":  1946,
+                     "name":  "FC Köln vs Borussia Dortmund",
+                     "starting_at":  "2026-03-07 17:30:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772904600,
+                     "participants":  [
+                                          {
+                                              "id":  3320,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  1946,
+                                              "gender":  "male",
+                                              "name":  "FC Köln",
+                                              "short_code":  "KOE",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/24/3320.png",
+                                              "founded":  1948,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-27 19:30:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  68,
+                                              "sport_id":  1,
+                                              "country_id":  11,
+                                              "venue_id":  2166,
+                                              "gender":  "male",
+                                              "name":  "Borussia Dortmund",
+                                              "short_code":  "BVB",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/4/68.png",
+                                              "founded":  1909,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 17:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  82,
+                                    "sport_id":  1,
+                                    "country_id":  11,
+                                    "name":  "Bundesliga",
+                                    "active":  true,
+                                    "short_code":  "GER BI",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/18/82.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 18:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19439511,
+                     "sport_id":  1,
+                     "league_id":  564,
+                     "season_id":  25659,
+                     "stage_id":  77476930,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  373236,
+                     "state_id":  1,
+                     "venue_id":  140808,
+                     "name":  "Atlético Madrid vs Real Sociedad",
+                     "starting_at":  "2026-03-07 17:30:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772904600,
+                     "participants":  [
+                                          {
+                                              "id":  7980,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  140808,
+                                              "gender":  "male",
+                                              "name":  "Atlético Madrid",
+                                              "short_code":  "ATM",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/12/7980.png",
+                                              "founded":  1903,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 20:00:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  594,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  133,
+                                              "gender":  "male",
+                                              "name":  "Real Sociedad",
+                                              "short_code":  "RSO",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/18/594.png",
+                                              "founded":  1909,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 17:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  564,
+                                    "sport_id":  1,
+                                    "country_id":  32,
+                                    "name":  "La Liga",
+                                    "active":  true,
+                                    "short_code":  "ESP PL",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/20/564.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 17:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19441381,
+                     "sport_id":  1,
+                     "league_id":  567,
+                     "season_id":  25673,
+                     "stage_id":  77476943,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  373506,
+                     "state_id":  1,
+                     "venue_id":  5407,
+                     "name":  "Burgos vs Mirandés",
+                     "starting_at":  "2026-03-07 17:30:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772904600,
+                     "participants":  [
+                                          {
+                                              "id":  8366,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  5407,
+                                              "gender":  "male",
+                                              "name":  "Burgos",
+                                              "short_code":  "BUR",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/14/8366.png",
+                                              "founded":  1922,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 15:15:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  6968,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  4550,
+                                              "gender":  "male",
+                                              "name":  "Mirandés",
+                                              "short_code":  "MIR",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/24/6968.png",
+                                              "founded":  1927,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-03-01 15:15:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  567,
+                                    "sport_id":  1,
+                                    "country_id":  32,
+                                    "name":  "La Liga 2",
+                                    "active":  true,
+                                    "short_code":  "ESP S",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/23/567.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 17:30:00",
+                                    "category":  2,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19439510,
+                     "sport_id":  1,
+                     "league_id":  564,
+                     "season_id":  25659,
+                     "stage_id":  77476930,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  373236,
+                     "state_id":  1,
+                     "venue_id":  9162,
+                     "name":  "Athletic Club vs FC Barcelona",
+                     "starting_at":  "2026-03-07 20:00:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772913600,
+                     "participants":  [
+                                          {
+                                              "id":  13258,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  9162,
+                                              "gender":  "male",
+                                              "name":  "Athletic Club",
+                                              "short_code":  "ATH",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/10/13258.png",
+                                              "founded":  1898,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 13:00:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  83,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  9236,
+                                              "gender":  "male",
+                                              "name":  "FC Barcelona",
+                                              "short_code":  "BAR",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/19/83.png",
+                                              "founded":  1899,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 15:15:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  564,
+                                    "sport_id":  1,
+                                    "country_id":  32,
+                                    "name":  "La Liga",
+                                    "active":  true,
+                                    "short_code":  "ESP PL",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/20/564.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 17:30:00",
+                                    "category":  1,
+                                    "has_jerseys":  false
+                                }
+                 },
+                 {
+                     "id":  19441388,
+                     "sport_id":  1,
+                     "league_id":  567,
+                     "season_id":  25673,
+                     "stage_id":  77476943,
+                     "group_id":  null,
+                     "aggregate_id":  null,
+                     "round_id":  373506,
+                     "state_id":  1,
+                     "venue_id":  9233,
+                     "name":  "Málaga vs Real Valladolid",
+                     "starting_at":  "2026-03-07 20:00:00",
+                     "result_info":  null,
+                     "leg":  "1/1",
+                     "details":  null,
+                     "length":  90,
+                     "placeholder":  false,
+                     "has_odds":  true,
+                     "has_premium_odds":  true,
+                     "starting_at_timestamp":  1772913600,
+                     "participants":  [
+                                          {
+                                              "id":  361,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  9323,
+                                              "gender":  "male",
+                                              "name":  "Real Valladolid",
+                                              "short_code":  "REV",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/9/361.png",
+                                              "founded":  1928,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 17:30:00",
+                                              "meta":  {
+                                                           "location":  "away",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          },
+                                          {
+                                              "id":  126,
+                                              "sport_id":  1,
+                                              "country_id":  32,
+                                              "venue_id":  9233,
+                                              "gender":  "male",
+                                              "name":  "Málaga",
+                                              "short_code":  "MLA",
+                                              "image_path":  "https://cdn.sportmonks.com/images/soccer/teams/30/126.png",
+                                              "founded":  1948,
+                                              "type":  "domestic",
+                                              "placeholder":  false,
+                                              "last_played_at":  "2026-02-28 17:30:00",
+                                              "meta":  {
+                                                           "location":  "home",
+                                                           "winner":  null,
+                                                           "position":  null
+                                                       }
+                                          }
+                                      ],
+                     "league":  {
+                                    "id":  567,
+                                    "sport_id":  1,
+                                    "country_id":  32,
+                                    "name":  "La Liga 2",
+                                    "active":  true,
+                                    "short_code":  "ESP S",
+                                    "image_path":  "https://cdn.sportmonks.com/images/soccer/leagues/23/567.png",
+                                    "type":  "league",
+                                    "sub_type":  "domestic",
+                                    "last_played_at":  "2026-03-01 17:30:00",
+                                    "category":  2,
+                                    "has_jerseys":  false
+                                }
+                 }
+             ],
+    "pagination":  {
+                       "count":  14,
+                       "per_page":  25,
+                       "current_page":  1,
+                       "next_page":  null,
+                       "has_more":  false
+                   },
+    "subscription":  [
+                         {
+                             "meta":  {
+                                          "trial_ends_at":  "2026-03-01 03:35:26",
+                                          "ends_at":  "2026-03-15 02:37:56",
+                                          "current_timestamp":  1772398402
+                                      },
+                             "plans":  [
+                                           {
+                                               "plan":  "European Plan",
+                                               "sport":  "Football",
+                                               "category":  "Standard"
+                                           }
+                                       ],
+                             "add_ons":  [
+                                             {
+                                                 "add_on":  "European Club Tournaments",
+                                                 "sport":  "Football",
+                                                 "category":  "Plan"
+                                             }
+                                         ],
+                             "widgets":  [
+
+                                         ]
+                         }
+                     ],
+    "rate_limit":  {
+                       "resets_in_seconds":  2327,
+                       "remaining":  2989,
+                       "requested_entity":  "Fixture"
+                   },
+    "timezone":  "UTC"
+}
