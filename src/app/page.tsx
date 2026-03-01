@@ -3,11 +3,15 @@ import { MatchCard } from "@/components/match/MatchCard";
 import { sportmonksService, Match } from "@/lib/services/prediction";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
+import { SignInButton } from "@clerk/nextjs";
 
 export const revalidate = 600; // ISR: regenerate every 10 min (predictions are daily, no need for 2 min)
 export const maxDuration = 60; // Allow up to 60s for heavy API pipeline on Vercel
 
 export default async function Home() {
+    const { userId } = await auth();
+
     // Fetch fixtures for the next 10 days (matches /games/today window)
     let fixtures: Match[] = [];
     try {
@@ -63,13 +67,22 @@ export default async function Home() {
                         <h2 className="text-4xl font-bold text-white mb-2 tracking-tighter">Signal Dashboard</h2>
                         <p className="text-neutral-400 font-medium">One verified signal per match — ranked by composite Edge Score</p>
                     </div>
-                    <Link
-                        href="/games/today"
-                        className="px-6 py-3 rounded-lg bg-[#111827] border border-[#1F2937] text-xs font-bold text-white uppercase tracking-widest hover:bg-[#1F2937] transition-all flex items-center gap-3 group"
-                    >
-                        Full Terminal
-                        <span className="group-hover:translate-x-1 transition-transform text-[#FBBF24]">→</span>
-                    </Link>
+                    {userId ? (
+                        <Link
+                            href="/games/today"
+                            className="px-6 py-3 rounded-lg bg-[#111827] border border-[#1F2937] text-xs font-bold text-white uppercase tracking-widest hover:bg-[#1F2937] transition-all flex items-center gap-3 group"
+                        >
+                            Full Terminal
+                            <span className="group-hover:translate-x-1 transition-transform text-[#FBBF24]">→</span>
+                        </Link>
+                    ) : (
+                        <SignInButton mode="modal">
+                            <button className="px-6 py-3 rounded-lg bg-[#FBBF24] text-xs font-bold text-black uppercase tracking-widest hover:bg-white transition-all flex items-center gap-3 group">
+                                Login for Full Terminal
+                                <span className="group-hover:translate-x-1 transition-transform">→</span>
+                            </button>
+                        </SignInButton>
+                    )}
                 </div>
 
                 {featuredMatches.length > 0 ? (

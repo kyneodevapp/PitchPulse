@@ -4,6 +4,8 @@ import { sportmonksService } from "@/lib/services/prediction";
 import { deriveWinPredictions } from "@/lib/engine/accaService";
 import { filterSafeLegs, filterFreezeLegs } from "@/lib/engine/accaFreeze";
 import { AccaFreezeClient } from "@/components/match/AccaFreezeClient";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 export const revalidate = 600; // ISR: regenerate every 10 min
 export const maxDuration = 60;
@@ -42,6 +44,9 @@ async function getAccaData() {
 }
 
 export default async function AccaFreezePage() {
+    const { userId } = await auth();
+    if (!userId) redirect("/sign-in");
+
     const { safeLegs, freezeLegs, meta } = await getAccaData();
 
     return (

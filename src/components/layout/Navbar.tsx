@@ -34,16 +34,29 @@ export function Navbar() {
                     </Link>
 
                     <div className="hidden md:flex items-center gap-8">
-                        {navItems.map((item) => (
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 text-xs font-bold text-neutral-400 hover:text-white uppercase tracking-widest transition-colors"
+                        >
+                            <LayoutDashboard className="w-3.5 h-3.5" />
+                            Terminal
+                        </Link>
+                        <SignedIn>
                             <Link
-                                key={item.href}
-                                href={item.href}
+                                href="/acca-freeze"
                                 className="flex items-center gap-2 text-xs font-bold text-neutral-400 hover:text-white uppercase tracking-widest transition-colors"
                             >
-                                <item.icon className="w-3.5 h-3.5" />
-                                {item.name}
+                                <Snowflake className="w-3.5 h-3.5" />
+                                ACCA Freeze
                             </Link>
-                        ))}
+                            <Link
+                                href="/history"
+                                className="flex items-center gap-2 text-xs font-bold text-neutral-400 hover:text-white uppercase tracking-widest transition-colors"
+                            >
+                                <History className="w-3.5 h-3.5" />
+                                History
+                            </Link>
+                        </SignedIn>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -103,17 +116,32 @@ export function Navbar() {
                         className="md:hidden border-b border-[#1F2937] bg-[#111827] overflow-hidden"
                     >
                         <div className="flex flex-col p-6 gap-3">
-                            {navItems.map((item) => (
+                            <Link
+                                href="/"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="flex items-center gap-3 px-4 py-4 rounded-lg bg-[#0B0F14] border border-[#1F2937] text-xs font-bold text-neutral-400 uppercase tracking-widest hover:text-white transition-all"
+                            >
+                                <LayoutDashboard className="w-4 h-4 text-[#FBBF24]" />
+                                Terminal
+                            </Link>
+                            <SignedIn>
                                 <Link
-                                    key={item.href}
-                                    href={item.href}
+                                    href="/acca-freeze"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="flex items-center gap-3 px-4 py-4 rounded-lg bg-[#0B0F14] border border-[#1F2937] text-xs font-bold text-neutral-400 uppercase tracking-widest hover:text-white transition-all"
                                 >
-                                    <item.icon className="w-4 h-4 text-[#FBBF24]" />
-                                    {item.name}
+                                    <Snowflake className="w-4 h-4 text-[#FBBF24]" />
+                                    ACCA Freeze
                                 </Link>
-                            ))}
+                                <Link
+                                    href="/history"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-4 rounded-lg bg-[#0B0F14] border border-[#1F2937] text-xs font-bold text-neutral-400 uppercase tracking-widest hover:text-white transition-all"
+                                >
+                                    <History className="w-4 h-4 text-[#FBBF24]" />
+                                    History
+                                </Link>
+                            </SignedIn>
                             {mounted && (
                                 <div className="pt-3 border-t border-[#1F2937] mt-3">
                                     <SignedOut>
