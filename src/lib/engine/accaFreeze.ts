@@ -102,19 +102,32 @@ function predictionToLeg(pick: MatchPrediction, isFreezeLeg: boolean): AccaLeg {
 /**
  * Filter predictions to safe legs: WIN-only, odds 1.20–2.00, edge ≥ 5.
  * Returns at most MAX_SAME_LEAGUE per league.
+ * DE-DUPLICATED: Each match appears only once.
  */
 export function filterSafeLegs(picks: MatchPrediction[]): AccaLeg[] {
-    const winPicks = picks.filter(p =>
+    // 1. Filter candidates
+    const winCandidates = picks.filter(p =>
         WIN_MARKET_IDS.includes(p.marketId) &&
         p.odds >= SAFE_ODDS_MIN &&
         p.odds <= SAFE_ODDS_MAX &&
         p.edgeScore >= MIN_EDGE_SCORE
     );
 
-    // Sort by probability descending (most likely to win first)
+    // 2. De-duplicate by fixtureId (keep best probability pick per fixture)
+    const uniqueFixtures = new Map<number, MatchPrediction>();
+    for (const p of winCandidates) {
+        const existing = uniqueFixtures.get(p.fixtureId);
+        if (!existing || p.probability > existing.probability) {
+            uniqueFixtures.set(p.fixtureId, p);
+        }
+    }
+
+    const winPicks = Array.from(uniqueFixtures.values());
+
+    // 3. Sort by probability descending
     winPicks.sort((a, b) => b.probability - a.probability);
 
-    // Enforce max per league
+    // 4. Enforce max per league
     const leagueCounts = new Map<number, number>();
     const filtered: MatchPrediction[] = [];
 
@@ -126,7 +139,7 @@ export function filterSafeLegs(picks: MatchPrediction[]): AccaLeg[] {
         }
     }
 
-    // Take top results and sort by startTime ascending (chronological)
+    // Take top results and sort by startTime ascending
     return filtered.map(p => predictionToLeg(p, false))
         .sort((a, b) => a.startTime.localeCompare(b.startTime));
 }

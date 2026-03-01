@@ -7,7 +7,7 @@ import type { MatchPrediction } from "@/lib/engine/engine";
  * probabilities from its Poisson lambdas, then fetch REAL bookmaker match-winner odds.
  */
 export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPrediction[]> {
-    const predictions: MatchPrediction[] = [];
+    const predictionMap = new Map<number, MatchPrediction>();
 
     for (const f of fixtures) {
         const lambdaHome = f.lambda_home;
@@ -30,10 +30,15 @@ export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPred
 
             let odds = 0;
             try {
-                const result = await sportmonksService.getOddsForPrediction(
-                    f.id, m.label, f.home_team, f.away_team
-                );
-                odds = result.best?.odds || result.bet365 || 0;
+                // If fixture already has an engine-verified odds value for this market, use it to ensure consistency
+                if (f.prediction === m.label && (f.odds ?? 0) > 0) {
+                    odds = f.odds!;
+                } else {
+                    const result = await sportmonksService.getOddsForPrediction(
+                        f.id, m.label, f.home_team, f.away_team
+                    );
+                    odds = result.best?.odds || result.bet365 || 0;
+                }
             } catch (e) {
                 console.warn(`[ACCA Service] Odds fetch failed for ${m.label} (ID: ${f.id}):`, e);
             }
@@ -47,12 +52,12 @@ export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPred
                 const impliedProb = 1 / odds;
                 const edge = m.prob - impliedProb;
 
-                predictions.push({
+                const pred: MatchPrediction = {
                     fixtureId: f.id,
                     homeTeam: f.home_team,
                     awayTeam: f.away_team,
-                    homeLogo: f.home_logo,
-                    awayLogo: f.away_logo,
+                    homeLogo: f.home_logo || "",
+                    awayLogo: f.away_logo || "",
                     leagueName: f.league_name,
                     leagueId: f.league_id,
                     startTime: f.start_time,
@@ -67,7 +72,7 @@ export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPred
                     confidence: f.confidence || 65,
                     edgeScore: edge > 0 ? Math.round(edge * 100) : 5,
                     bet365Odds: null,
-                    bestBookmaker: f.best_bookmaker || "",
+                    bestBookmaker: f.best_bookmaker || ((f.odds ?? 0) > 0 ? f.best_bookmaker || "" : ""),
                     ev: edge,
                     evAdjusted: edge,
                     clvProjection: 0,
@@ -78,10 +83,16 @@ export async function deriveWinPredictions(fixtures: Match[]): Promise<MatchPred
                     isLocked: false,
                     suggestedStake: 0,
                     riskTier: "B",
-                });
+                };
+
+                // Deduplicate: Keep the best probability win market per fixture
+                const existing = predictionMap.get(f.id);
+                if (!existing || pred.probability > existing.probability) {
+                    predictionMap.set(f.id, pred);
+                }
             }
         }
     }
 
-    return predictions;
+    return Array.from(predictionMap.values());
 }

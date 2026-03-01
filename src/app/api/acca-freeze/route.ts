@@ -24,9 +24,14 @@ export async function GET() {
         // Derive WIN market predictions from lambdas + real bookmaker odds
         const winPredictions = await deriveWinPredictions(fixtures);
 
-        // Filter into safe and freeze pools
+        // Filter into safe and freeze pools - MUTUALLY EXCLUSIVE
         const safeLegs = filterSafeLegs(winPredictions);
-        const freezeLegs = filterFreezeLegs(winPredictions);
+
+        // Ensure matches in safe legs are NOT available for freeze legs
+        const safeIds = new Set(safeLegs.map(l => l.fixtureId));
+        const freezeCandidates = winPredictions.filter(p => !safeIds.has(p.fixtureId));
+
+        const freezeLegs = filterFreezeLegs(freezeCandidates);
 
         // Build top 10 ACCAs
         const accas = buildAccas(safeLegs, freezeLegs, 10);

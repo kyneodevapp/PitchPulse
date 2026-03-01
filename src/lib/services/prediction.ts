@@ -709,19 +709,23 @@ class SportMonksService {
 
         // Team-specific predictions
         if (marketIds.length === 0) {
+            const hMatch = homeTeam ? p.includes(homeTeam.toLowerCase().substring(0, 5)) : false;
+            const aMatch = awayTeam ? p.includes(awayTeam.toLowerCase().substring(0, 5)) : false;
+
             if (p.includes("to win") || p.endsWith(" win")) {
                 marketIds = [1]; // Match Winner
-                const isHome = homeTeam && p.includes(homeTeam.toLowerCase().substring(0, 5));
-                labelMatch = isHome ? "Home" : "Away";
+                // If both match (unlikely but possible with short strings), default to start of string position
+                if (hMatch && aMatch) {
+                    labelMatch = p.indexOf(homeTeam.toLowerCase()) < p.indexOf(awayTeam.toLowerCase()) ? "Home" : "Away";
+                } else {
+                    labelMatch = hMatch ? "Home" : (aMatch ? "Away" : null);
+                }
             } else if (p.includes("(dnb)") || p.endsWith(" dnb")) {
                 marketIds = [10]; // Draw No Bet
-                const isHome = homeTeam && p.includes(homeTeam.toLowerCase().substring(0, 5));
-                // DNB labels in SportMonks are often '1' and '2' or team names
-                labelMatch = isHome ? "1" : "2";
+                labelMatch = hMatch ? "1" : (aMatch ? "2" : null);
             } else if (p.includes("or draw")) {
                 marketIds = [12]; // Double Chance
-                // Double chance uses team names in labels, match via market_description
-                labelMatch = null; // will match by market_id only, then pick correct one
+                labelMatch = null;
             } else if (p.includes("& btts") || p.includes("btts &")) {
                 marketIds = [82]; // Total Goals/BTTS combined
                 labelMatch = null;
@@ -850,12 +854,19 @@ class SportMonksService {
         const startDate = now.toISOString().split('T')[0];
         const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        const allFixtures = await this.fetchAllPages(`/fixtures/between/${startDate}/${endDate}`, {
+        const allFixturesRaw = await this.fetchAllPages(`/fixtures/between/${startDate}/${endDate}`, {
             include: "participants;league",
             filters: `fixtureLeagues:${this.LEAGUE_IDS.join(',')}`
         });
 
-        console.log(`[Engine] Fetched ${allFixtures.length} raw fixtures for 10 days`);
+        // De-duplicate by ID at the source
+        const fixtureMap = new Map<number, any>();
+        for (const f of allFixturesRaw) {
+            fixtureMap.set(f.id, f);
+        }
+        const allFixtures = Array.from(fixtureMap.values());
+
+        console.log(`[Engine] Fetched ${allFixturesRaw.length} raw, ${allFixtures.length} unique fixtures for 10 days`);
 
         if (allFixtures.length === 0) return [];
 
