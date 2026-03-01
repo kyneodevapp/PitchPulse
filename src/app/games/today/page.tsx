@@ -21,7 +21,7 @@ export default async function TodayGamesPage() {
     // Fetch fixtures for the next 10 days for full coverage across all 7 leagues
     let fixtures: Match[] = [];
     try {
-        fixtures = await sportmonksService.getFixtures(10);
+        fixtures = await sportmonksService.getFixtures(5);
     } catch (e) {
         console.error('[TodayGamesPage] getFixtures failed:', e);
     }

@@ -554,6 +554,45 @@ class SportMonksService {
     private readonly ODDS_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
     /**
+     * Pre-load odds from Supabase cache for multiple fixtures at once.
+     */
+    async fetchBatchOddsCache(fixtureIds: number[]): Promise<void> {
+        if (fixtureIds.length === 0) return;
+
+        try {
+            const { createClient } = await import("@supabase/supabase-js");
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (!supabaseUrl || !supabaseKey) return;
+
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            const fifteenMinAgo = new Date(Date.now() - this.ODDS_CACHE_TTL).toISOString();
+
+            const { data: cachedOdds } = await supabase
+                .from("odds_cache")
+                .select("*")
+                .in("fixture_id", fixtureIds)
+                .gte("fetched_at", fifteenMinAgo);
+
+            if (cachedOdds && cachedOdds.length > 0) {
+                // Group by fixtureId and update in-memory cache
+                const grouped = new Map<number, any[]>();
+                for (const o of cachedOdds) {
+                    const list = grouped.get(o.fixture_id) || [];
+                    list.push(o);
+                    grouped.set(o.fixture_id, list);
+                }
+
+                for (const [fid, odds] of grouped) {
+                    this.oddsCache.set(fid, { timestamp: Date.now(), odds });
+                }
+            }
+        } catch (e) {
+            console.warn("[OddsCache] Batch read failed:", e);
+        }
+    }
+
+    /**
      * Fetch ALL UK bookmaker odds for a fixture (single API call, cached).
      * Also upserts into Supabase for persistent caching.
      */
@@ -824,6 +863,14 @@ class SportMonksService {
         const activeFixtures = allFixtures.filter((f: any) => ![5, 7, 8].includes(f.state_id));
         if (activeFixtures.length === 0) return [];
 
+        const activeIds = activeFixtures.map((f: any) => f.id);
+
+        // Prefetch all odds and immutable histories in parallel (Massive Batch Optimization)
+        const [historyMap] = await Promise.all([
+            PredictionHistory.getBatch(activeIds),
+            this.fetchBatchOddsCache(activeIds)
+        ]);
+
         // Collect unique season IDs and fetch standings IN PARALLEL (perf fix)
         const seasonIds = [...new Set(activeFixtures.map((f: any) => f.season_id).filter(Boolean))];
         const allTeamStats = new Map<number, TeamStats>();
@@ -834,16 +881,11 @@ class SportMonksService {
             stats.forEach((v, k) => allTeamStats.set(k, v));
         }
 
-        // Prefetch all odds in parallel to warm cache (perf fix)
-        await Promise.all(
-            activeFixtures.map((f: any) => this.fetchFixtureOdds(f.id))
-        );
-
         // Process fixtures in larger chunks to speed up generation while respecting Vercel Hobby limits
         const CHUNK_SIZE = 50;
         const results: (Match | null)[] = [];
 
-        console.log(`[Engine] Processing ${activeFixtures.length} active fixtures in chunks of ${CHUNK_SIZE}...`);
+        console.log(`[Engine] Processing ${activeFixtures.length} active fixtures (Batched) in chunks of ${CHUNK_SIZE}...`);
 
         for (let i = 0; i < activeFixtures.length; i += CHUNK_SIZE) {
             const chunk = activeFixtures.slice(i, i + CHUNK_SIZE);
@@ -861,8 +903,8 @@ class SportMonksService {
                     awayP?.id ? this.getTeamForm(awayP.id) : Promise.resolve(undefined)
                 ]);
 
-                // Check immutable history first
-                const existing = await PredictionHistory.get(f.id);
+                // Check immutable history first (Now from pre-fetched Map)
+                const existing = historyMap.get(f.id);
                 if (existing) {
                     // Skip stale predictions (older than 12 hours) to force regeneration
                     // with current engine data, ensuring all metrics are populated.

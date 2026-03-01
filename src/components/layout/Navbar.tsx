@@ -58,12 +58,13 @@ export function Navbar() {
                                 </SignedOut>
                                 <SignedIn>
                                     <div className="flex items-center gap-4">
-                                        {!isSubscribed && trialActive && (
+                                        {/* TEMPORARY: Hide trial status as all users have full access */}
+                                        {/* {!isSubscribed && trialActive && (
                                             <div className="hidden lg:flex flex-col items-end">
                                                 <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest">Pro Status</span>
                                                 <span className="text-[8px] font-bold text-neutral-500 uppercase">{daysLeft} Days Remain</span>
                                             </div>
-                                        )}
+                                        )} */}
                                         <UserButton
                                             appearance={{
                                                 elements: {

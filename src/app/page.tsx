@@ -11,7 +11,7 @@ export default async function Home() {
     // Fetch fixtures for the next 10 days (matches /games/today window)
     let fixtures: Match[] = [];
     try {
-        fixtures = await sportmonksService.getFixtures(10);
+        fixtures = await sportmonksService.getFixtures(3);
     } catch (e) {
         console.error('[Home] getFixtures failed:', e);
     }

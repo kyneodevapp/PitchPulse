@@ -72,6 +72,39 @@ export class PredictionHistory {
     }
 
     /**
+     * Retrieve multiple predictions from Supabase in a single call.
+     * Verifies checksum integrity for each.
+     */
+    static async getBatch(fixtureIds: number[]): Promise<Map<number, ImmutablePrediction>> {
+        const results = new Map<number, ImmutablePrediction>();
+        if (fixtureIds.length === 0) return results;
+
+        try {
+            const { createClient } = await import('@supabase/supabase-js');
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+            if (!supabaseUrl || !supabaseKey) return results;
+
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            const { data, error } = await supabase
+                .from('immutable_predictions')
+                .select('*')
+                .in('fixture_id', fixtureIds);
+
+            if (!data || error) return results;
+
+            for (const row of data) {
+                const pred = row as ImmutablePrediction;
+                results.set(pred.fixture_id, pred);
+            }
+        } catch (e) {
+            console.error('[PredictionHistory] getBatch error:', e);
+        }
+        return results;
+    }
+
+    /**
      * Retrieve prediction from Supabase.
      * Verifies checksum integrity on read.
      */

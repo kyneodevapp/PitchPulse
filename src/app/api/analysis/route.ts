@@ -134,10 +134,12 @@ export async function GET(request: Request) {
     }
     const stripeStatus = user?.publicMetadata?.stripeStatus as string | undefined;
     const createdAt = user?.createdAt ?? 0;
-    const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
-    if (stripeStatus !== "active" && !isInTrial) {
-        return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
-    }
+    // const isInTrial = (Date.now() - createdAt) < 7 * 24 * 60 * 60 * 1000;
+
+    // TEMPORARY: Allow all authenticated users
+    // if (stripeStatus !== "active" && !isInTrial) {
+    //     return NextResponse.json({ error: "Premium subscription required" }, { status: 403 });
+    // }
 
     // Rate limit: 30 analysis requests per user per minute
     const rl = rateLimit(`analysis:${userId}`, { limit: 30, windowMs: 60_000 });
