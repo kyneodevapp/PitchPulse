@@ -839,8 +839,8 @@ class SportMonksService {
             activeFixtures.map((f: any) => this.fetchFixtureOdds(f.id))
         );
 
-        // Process fixtures in limited chunks to prevent massive parallel network bursts/timeouts
-        const CHUNK_SIZE = 20;
+        // Process fixtures in larger chunks to speed up generation while respecting Vercel Hobby limits
+        const CHUNK_SIZE = 50;
         const results: (Match | null)[] = [];
 
         console.log(`[Engine] Processing ${activeFixtures.length} active fixtures in chunks of ${CHUNK_SIZE}...`);
@@ -1053,8 +1053,11 @@ class SportMonksService {
         // Collect unique season IDs and fetch standings (for fallback only)
         const seasonIds = [...new Set(allFixtures.map((f: any) => f.season_id).filter(Boolean))];
         const allTeamStats = new Map<number, TeamStats>();
-        for (const sid of seasonIds) {
-            const stats = await this.getTeamStats(sid);
+        // Fetch all standings in parallel to avoid serial API bottlenecks
+        const allStatsArrays = await Promise.all(
+            seasonIds.map(sid => this.getTeamStats(sid))
+        );
+        for (const stats of allStatsArrays) {
             stats.forEach((v, k) => allTeamStats.set(k, v));
         }
 
