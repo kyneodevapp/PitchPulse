@@ -76,6 +76,11 @@ function LegItem({
         hour: "2-digit",
         minute: "2-digit",
     });
+    const day = new Date(leg.startTime).toLocaleDateString([], {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+    });
 
     return (
         <motion.div
@@ -138,7 +143,7 @@ function LegItem({
                     <div className="flex items-center gap-1.5 justify-end mb-1">
                         <Clock className="w-3 h-3 text-neutral-600" />
                         <span className="text-[10px] font-bold text-neutral-500">
-                            {kickoff}
+                            {day} {kickoff}
                         </span>
                     </div>
                     <span className="text-[8px] font-black text-neutral-700 uppercase tracking-widest block">

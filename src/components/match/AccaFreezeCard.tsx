@@ -127,7 +127,9 @@ interface AccaFreezeCardProps {
 export function AccaFreezeCard({ acca, index, stake = 10 }: AccaFreezeCardProps) {
     const recStyle = RECOMMENDATION_STYLES[acca.freezeRecommendation];
 
-    const safeLegs = acca.legs.filter((l) => !l.isFreezeLeg);
+    const safeLegs = acca.legs
+        .filter((l) => !l.isFreezeLeg)
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
     const freezeLeg = acca.legs.find((l) => l.isFreezeLeg);
 
     const wonCount = acca.legs.filter((l) => l.status === "won").length;

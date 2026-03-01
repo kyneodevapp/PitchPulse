@@ -158,7 +158,9 @@ describe("filterFreezeLegs", () => {
             mkPrediction({ marketId: "result_home", odds: 3.50, probability: 0.35 }),
         ];
         const freeze = filterFreezeLegs(picks);
-        expect(freeze[0].probability).toBe(0.12);
+        // They should be sorted by startTime ascending (chronological) 
+        // regardless of the "Freeze Potential" rank used for the top 15 selection.
+        expect(freeze[0].fixtureId).toBe(picks[0].fixtureId); // earlier startTime
     });
 });
 

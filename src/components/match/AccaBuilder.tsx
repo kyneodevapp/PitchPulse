@@ -76,13 +76,15 @@ export function AccaBuilder({
                     <div className="flex-1 min-w-0 p-3 md:p-4">
                         <div className="flex flex-wrap items-center gap-2 justify-center md:justify-start">
                             <AnimatePresence mode="popLayout">
-                                {[...selectedSafe, ...selectedFreeze].map((leg) => (
-                                    <SelectedLegBadge
-                                        key={`${leg.fixtureId}-${leg.marketId}`}
-                                        leg={leg}
-                                        onRemove={() => onRemove(`${leg.fixtureId}-${leg.marketId}`)}
-                                    />
-                                ))}
+                                {[...selectedSafe, ...selectedFreeze]
+                                    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                                    .map((leg) => (
+                                        <SelectedLegBadge
+                                            key={`${leg.fixtureId}-${leg.marketId}`}
+                                            leg={leg}
+                                            onRemove={() => onRemove(`${leg.fixtureId}-${leg.marketId}`)}
+                                        />
+                                    ))}
                             </AnimatePresence>
 
                             {totalSelected < 5 && (

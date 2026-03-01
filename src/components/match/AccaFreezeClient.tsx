@@ -16,6 +16,10 @@ export function AccaFreezeClient({
     initialFreeze: AccaLeg[],
     meta: any
 }) {
+    // Client-side sorting to ensure chronological order regardless of server-side state/cache
+    const sortedSafe = [...initialSafe].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const sortedFreeze = [...initialFreeze].sort((a, b) => a.startTime.localeCompare(b.startTime));
+
     const [selectedSafe, setSelectedSafe] = useState<AccaLeg[]>([]);
     const [selectedFreeze, setSelectedFreeze] = useState<AccaLeg[]>([]);
 
@@ -147,7 +151,7 @@ export function AccaFreezeClient({
                             title="Safe Leg Pool"
                             icon={<ShieldCheck className="w-4 h-4 text-emerald-400" />}
                             iconColor="text-emerald-400"
-                            legs={initialSafe}
+                            legs={sortedSafe}
                             selectedIds={selectedSafe.map(l => `${l.fixtureId}-${l.marketId}`)}
                             onToggle={handleToggleLeg}
                             type="safe"
@@ -163,7 +167,7 @@ export function AccaFreezeClient({
                             title="Freeze Leg Pool"
                             icon={<Snowflake className="w-4 h-4 text-cyan-400" />}
                             iconColor="text-cyan-400"
-                            legs={initialFreeze}
+                            legs={sortedFreeze}
                             selectedIds={selectedFreeze.map(l => `${l.fixtureId}-${l.marketId}`)}
                             onToggle={handleToggleLeg}
                             type="freeze"

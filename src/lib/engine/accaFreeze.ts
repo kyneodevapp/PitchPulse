@@ -61,7 +61,7 @@ const SAFE_ODDS_MIN = 1.20;
 const SAFE_ODDS_MAX = 2.00;
 const FREEZE_ODDS_MIN = 3.00;
 const FREEZE_ODDS_MAX = 22.50;
-const MIN_EDGE_SCORE = 2.0;
+const MIN_EDGE_SCORE = 5.0;
 const MAX_SAME_LEAGUE = 2;
 const SAFE_LEG_COUNT = 4;
 const DEFAULT_STAKE = 10;
@@ -126,7 +126,9 @@ export function filterSafeLegs(picks: MatchPrediction[]): AccaLeg[] {
         }
     }
 
-    return filtered.map(p => predictionToLeg(p, false));
+    // Take top results and sort by startTime ascending (chronological)
+    return filtered.map(p => predictionToLeg(p, false))
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
 /**
@@ -182,8 +184,10 @@ export function filterFreezeLegs(picks: MatchPrediction[]): AccaLeg[] {
         return getScore(b) - getScore(a);
     });
 
-    // 4. Take top 15 premium picks
-    return freezePicks.slice(0, 15).map(p => predictionToLeg(p, true));
+    // 4. Take top 15 premium picks and sort by startTime ascending (chronological)
+    return freezePicks.slice(0, 15)
+        .map(p => predictionToLeg(p, true))
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
 // ============ SCORING ============
@@ -349,6 +353,11 @@ export function buildAccas(
                 selected.push(candidate);
             }
         }
+    }
+
+    // FINAL STEP: Sort legs within each selected ACCA by startTime ascending
+    for (const acca of selected) {
+        acca.legs.sort((a, b) => a.startTime.localeCompare(b.startTime));
     }
 
     return selected;
