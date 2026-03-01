@@ -11,7 +11,7 @@ export default async function Home() {
     // Fetch fixtures for the next 10 days (matches /games/today window)
     let fixtures: Match[] = [];
     try {
-        fixtures = await sportmonksService.getFixtures(3);
+        fixtures = await sportmonksService.getFixtures(7);
     } catch (e) {
         console.error('[Home] getFixtures failed:', e);
     }
@@ -20,7 +20,7 @@ export default async function Home() {
     const qualifiedPicks = [...fixtures]
         .filter((f: Match) => f.edge_score && f.edge_score > 0 && (f.odds ?? 0) >= 1.80)
         .sort((a, b) => (b.edge_score || 0) - (a.edge_score || 0))
-        .slice(0, 12); // Show top 12 by Edge Score
+        .slice(0, 6); // Show top 6 by Edge Score (Weekly Window)
 
     const featuredMatches = qualifiedPicks.map((f: Match) => ({
         id: f.id,
@@ -67,7 +67,7 @@ export default async function Home() {
                         href="/games/today"
                         className="px-6 py-3 rounded-lg bg-[#111827] border border-[#1F2937] text-xs font-bold text-white uppercase tracking-widest hover:bg-[#1F2937] transition-all flex items-center gap-3 group"
                     >
-                        View Full Terminal
+                        Full Terminal
                         <span className="group-hover:translate-x-1 transition-transform text-[#FBBF24]">→</span>
                     </Link>
                 </div>
