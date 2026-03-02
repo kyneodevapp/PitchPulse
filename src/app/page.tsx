@@ -108,23 +108,6 @@ export default async function Home() {
                 )}
             </section>
 
-            <section className="bg-[#111827] border-y border-[#1F2937] py-32">
-                <div className="container mx-auto px-4 text-center">
-                    <div className="max-w-3xl mx-auto">
-                        <span className="inline-block px-4 py-1 mb-8 text-[10px] font-bold tracking-[0.2em] text-[#FBBF24] uppercase border border-[#FBBF24]/30 rounded-lg">
-                            Premium Access
-                        </span>
-                        <h2 className="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tighter">Ready to dominate?</h2>
-                        <p className="text-neutral-400 mb-12 text-lg md:text-xl leading-relaxed font-medium">
-                            Join 10,000+ elite analysts who use PitchPulse to gain a surgical edge.
-                            Get started for free or upgrade to Pro for institutional-grade precision.
-                        </p>
-                        <button className="px-12 py-5 rounded-xl bg-[#FBBF24] text-black font-bold text-lg hover:bg-white transition-all uppercase tracking-widest shadow-2xl">
-                            Unlock Pro Predictions
-                        </button>
-                    </div>
-                </div>
-            </section>
 
             <footer className="container mx-auto px-4 py-16 mt-auto">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-12 pt-12 border-t border-[#1F2937]">

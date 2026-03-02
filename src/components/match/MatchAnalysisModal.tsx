@@ -5,8 +5,6 @@ import { X, Loader2, TrendingUp, ChevronDown, Info, Lock, Zap, Target, BarChart3
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
-import { useSubscription } from "@/lib/hooks/useSubscription";
-import { Paywall } from "./Paywall";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -366,7 +364,6 @@ export function MatchAnalysisModal({
     const [mounted, setMounted] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
-    const { isTrialExpired } = useSubscription();
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -382,7 +379,7 @@ export function MatchAnalysisModal({
             });
             fetch(`/api/analysis?${params}`)
                 .then(r => {
-                    if (!r.ok) throw new Error(r.status === 401 ? "Please sign in to view analysis." : r.status === 403 ? "Premium subscription required." : "Analysis temporarily unavailable.");
+                    if (!r.ok) throw new Error(r.status === 401 ? "Please sign in to view analysis." : "Analysis temporarily unavailable.");
                     return r.json();
                 })
                 .then(d => { setData(d); setIsLoading(false); })
@@ -551,8 +548,6 @@ export function MatchAnalysisModal({
                                         </div>
                                         <span className="text-sm font-medium text-neutral-400 text-center max-w-xs">{error}</span>
                                     </div>
-                                ) : isTrialExpired ? (
-                                    <Paywall onUpgrade={() => router.push("/api/checkout")} />
                                 ) : data ? (
                                     <>
                                         {/* ═══════ MARKET TABS ═══════ */}

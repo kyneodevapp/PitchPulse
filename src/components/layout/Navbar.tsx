@@ -71,20 +71,6 @@ export function Navbar() {
                                 </SignedOut>
                                 <SignedIn>
                                     <div className="flex items-center gap-4">
-                                        {isVip && (
-                                            <div className="hidden lg:flex flex-col items-end">
-                                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest">VIP Member</span>
-                                                <span className="text-[8px] font-bold text-neutral-500 uppercase">Lifetime Access</span>
-                                            </div>
-                                        )}
-                                        {(!isSubscribed || trialActive) && !isVip && (
-                                            <div className="hidden lg:flex flex-col items-end">
-                                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest">
-                                                    {isSubscribed ? "Pro Status" : "Trial Active"}
-                                                </span>
-                                                <span className="text-[8px] font-bold text-neutral-500 uppercase">{daysLeft} Days Remain</span>
-                                            </div>
-                                        )}
                                         <UserButton
                                             appearance={{
                                                 elements: {
