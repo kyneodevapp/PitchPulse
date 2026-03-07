@@ -3,9 +3,16 @@
 import { motion } from "framer-motion";
 import { ArrowLeftRight, Zap, Target, TrendingUp } from "lucide-react";
 
+const STATS = [
+    { label: "Win Rate", value: "84%", icon: Target },
+    { label: "Daily Tips", value: "50+", icon: Zap },
+    { label: "Accuracy", value: "92%", icon: TrendingUp },
+    { label: "Leagues", value: "23", icon: ArrowLeftRight },
+];
+
 export function Hero() {
     return (
-        <div className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden bg-[#0B0F14]">
+        <div className="relative pt-20 pb-10 md:pt-28 md:pb-12 overflow-hidden bg-[#0B0F14]">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="max-w-4xl mx-auto text-center">
                     <motion.div
@@ -36,28 +43,28 @@ export function Hero() {
                             </button>
                         </div>
                     </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className="mt-20 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4"
-                    >
-                        {[
-                            { label: "Win Rate", value: "84%", icon: Target },
-                            { label: "Daily Tips", value: "50+", icon: Zap },
-                            { label: "Accuracy", value: "92%", icon: TrendingUp },
-                            { label: "Markets", value: "120+", icon: ArrowLeftRight },
-                        ].map((stat, i) => (
-                            <div key={i} className="bg-[#111827] p-8 rounded-xl border border-[#1F2937] hover:border-amber-400/50 transition-colors shadow-lg group">
-                                <stat.icon className="w-6 h-6 text-[#FBBF24] mb-4 mx-auto group-hover:scale-110 transition-transform" />
-                                <div className="text-3xl font-bold text-white mb-1 tabular-nums tracking-tighter">{stat.value}</div>
-                                <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">{stat.label}</div>
-                            </div>
-                        ))}
-                    </motion.div>
                 </div>
             </div>
+
+            {/* Stats strip — sits at the bottom of the hero as a border band */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.15 }}
+                className="container mx-auto px-4 sm:px-6 lg:px-8 mt-12"
+            >
+                <div className="border-t border-b border-[#1F2937] grid grid-cols-2 md:grid-cols-4 divide-x divide-[#1F2937]">
+                    {STATS.map(({ label, value, icon: Icon }) => (
+                        <div key={label} className="flex items-center justify-center gap-3 py-4 px-6 group hover:bg-white/[0.02] transition-colors">
+                            <Icon className="w-4 h-4 text-amber-400/60 flex-shrink-0" />
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-xl font-black text-white tabular-nums">{value}</span>
+                                <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest">{label}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </motion.div>
         </div>
     );
 }
