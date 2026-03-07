@@ -1,5 +1,6 @@
 import { Hero } from "@/components/layout/Hero";
 import { MatchCard } from "@/components/match/MatchCard";
+import { AuthGate } from "@/components/auth/AuthGate";
 import { sportmonksService, Match } from "@/lib/services/prediction";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import Link from "next/link";
@@ -85,7 +86,10 @@ export default async function Home() {
                     )}
                 </div>
 
-                {featuredMatches.length > 0 ? (
+                {/* Signed-out users see the premium gate */}
+                {!userId ? (
+                    <AuthGate />
+                ) : featuredMatches.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {featuredMatches.map((match, i) => (
                             <MatchCard key={i} {...match} />
@@ -95,7 +99,7 @@ export default async function Home() {
                     <div className="py-16 px-8 rounded-xl border border-dashed border-amber-400/20 text-center bg-amber-400/5">
                         <h3 className="text-xl font-bold text-white mb-3 tracking-tight">No Qualifying Signals</h3>
                         <p className="text-neutral-400 text-sm mb-6 max-w-md mx-auto">
-                            The Edge Engine didn't find any matches passing all validation gates (EV ≥ 4%, Edge ≥ 3%, risk-approved).
+                            The Edge Engine didn&apos;t find any matches passing all validation gates (EV ≥ 4%, Edge ≥ 3%, risk-approved).
                             Check the Terminal for the full pipeline output.
                         </p>
                         <Link

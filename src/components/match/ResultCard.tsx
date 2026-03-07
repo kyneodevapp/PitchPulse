@@ -135,7 +135,7 @@ export function ResultCard({ match, leagueName }: ResultCardProps) {
                                     Final Pick
                                 </span>
                                 <span className={cn(
-                                    "text-sm sm:text-base font-bold uppercase truncate max-w-[120px]",
+                                    "text-sm sm:text-base font-bold uppercase leading-tight",
                                     match.prediction_hit ? "text-emerald-400" : "text-rose-400"
                                 )}>
                                     {match.prediction}
