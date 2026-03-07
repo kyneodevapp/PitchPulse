@@ -33,7 +33,7 @@ export function Navbar() {
                         <BrandLogo showText={true} />
                     </Link>
 
-                    <div className="hidden md:flex items-center gap-8">
+                    <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8">
                         <Link
                             href="/"
                             className="flex items-center gap-2 text-xs font-bold text-neutral-400 hover:text-white uppercase tracking-widest transition-colors"

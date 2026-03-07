@@ -53,8 +53,22 @@ export default async function Home() {
         <div className="flex flex-col bg-[#0B0F14]">
             <Hero />
 
-            {/* ── SIGNED OUT: Premium gate ── */}
-            {!userId && <AuthGate />}
+            {/* ── SIGNED OUT: Premium gate with real blurred previews ── */}
+            {!userId && (
+                <AuthGate
+                    previewMatches={featuredMatches.slice(0, 5).map(m => ({
+                        homeTeam: m.homeTeam,
+                        awayTeam: m.awayTeam,
+                        homeLogo: m.homeLogo,
+                        awayLogo: m.awayLogo,
+                        leagueName: m.leagueName,
+                        prediction: m.prediction,
+                        odds: m.odds,
+                        riskTier: m.riskTier,
+                        confidence: m.confidence,
+                    }))}
+                />
+            )}
 
             {/* ── SIGNED IN: Top picks grid ── */}
             {userId && (
