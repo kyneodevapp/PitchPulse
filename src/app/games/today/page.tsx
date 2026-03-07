@@ -9,10 +9,10 @@ export const maxDuration = 60; // Allow up to 60s for heavy API pipeline on Verc
 
 export const metadata: Metadata = {
     title: "Upcoming Predictions",
-    description: "AI-powered football predictions for the next 10 days across 15 major European leagues. UCL, Europa League, Premier League, and more.",
+    description: "AI-powered football predictions for the next 10 days across 24 major leagues including UCL, Europa, Conference League, Premier League, and more.",
     openGraph: {
         title: "Upcoming Predictions | PitchPulse",
-        description: "AI-powered football predictions for the next 10 days across 15 major European leagues.",
+        description: "AI-powered football predictions for the next 10 days across 24 major leagues.",
         url: "/games/today",
     },
 };
@@ -47,7 +47,7 @@ export default async function TodayGamesPage() {
                         </div>
                         <div className="bg-[#111827] border border-[#1F2937] rounded-xl px-6 py-4 shadow-lg group hover:border-amber-400/50 transition-colors">
                             <span className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.3em] block mb-1">Coverage</span>
-                            <span className="text-white font-bold text-lg">15 Global Leagues</span>
+                            <span className="text-white font-bold text-lg">24 Global Leagues</span>
                         </div>
                     </div>
                 </div>

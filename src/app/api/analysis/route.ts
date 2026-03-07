@@ -30,6 +30,7 @@ interface AnalysisMarket {
 
 interface AnalysisResponse {
     markets: AnalysisMarket[];
+    topPick: AnalysisMarket | null;   // Best Verdict — engine's top recommendation
     summary: {
         confidence: number;
         insightText: string;
@@ -64,49 +65,91 @@ function generateReasoning(
     lH: number, lA: number, home: string, away: string,
 ): string {
     const total = lH + lA;
-    const pct = (prob * 100).toFixed(0);
+    const pct = Math.round(prob * 100);
     const edgePct = (edge * 100).toFixed(1);
+    const totalGoals = total.toFixed(1);
+    const homeGoals = lH.toFixed(1);
+    const awayGoals = lA.toFixed(1);
 
     const reasonings: Record<string, string> = {
-        'over_2.5': `Combined λ of ${total.toFixed(2)} projects ${pct}% for Over 2.5. Edge: ${edgePct}%.`,
-        'over_3.5': `High-tempo model signals ${pct}% O3.5. Total expected goals: ${total.toFixed(2)}.`,
-        'under_2.5': `Defensive stability yields ${pct}% Under 2.5. λ: ${total.toFixed(2)}.`,
-        'under_3.5': `Low-variance projection: ${pct}% Under 3.5. Combined λ: ${total.toFixed(2)}.`,
-        'btts': `Scoring vectors (λH: ${lH.toFixed(2)}, λA: ${lA.toFixed(2)}) project ${pct}% BTTS.`,
-        'btts_over_2.5': `BTTS + goals: Score matrix confirms ${pct}% combined probability.`,
-        'btts_under_2.5': `Controlled BTTS: Both score but low total at ${pct}%.`,
-        'btts_home_win': `${home} win with both scoring: ${pct}% from matrix analysis.`,
-        'btts_away_win': `${away} win with both scoring: ${pct}% from matrix analysis.`,
-        'home_over_1.5': `${home} attacking output supports ${pct}% for Team O1.5. Edge: ${edgePct}%.`,
-        'away_over_1.5': `${away} conversion rate yields ${pct}% for Team O1.5. Edge: ${edgePct}%.`,
-        'home_under_3.5': `${home} goal containment: ${pct}% probability. Low-variance play.`,
-        'away_under_3.5': `${away} defensive resilience: ${pct}%. Stable market.`,
-        'result_home': `${home} projected to win: ${pct}%. λ advantage: ${(lH - lA).toFixed(2)}.`,
-        'result_draw': `Score matrix: ${pct}% draw probability. Tactical equilibrium expected.`,
-        'result_away': `${away} projected to win: ${pct}%. Away λ: ${lA.toFixed(2)}.`,
-        'correct_score': `Top Poisson scoreline at ${pct}%. 7×7 matrix derivation.`,
+        'over_2.5': `We expect around ${totalGoals} goals total. Bookmakers are underpricing this — our model gives it ${pct}% chance of going over 2.5, while they only price it at ${(100 / (1 + parseFloat(edgePct) / 100)).toFixed(0)}%.`,
+        'over_3.5': `Expected total goals: ${totalGoals}. Bookmakers say a high-scoring game is unlikely, but our model puts the chance of 4+ goals at ${pct}% — higher than what they're offering.`,
+        'under_2.5': `Both teams are expected to score roughly ${totalGoals} goals combined — a tightly contested game. Our model gives ${pct}% chance of staying under 2.5.`,
+        'under_3.5': `A controlled affair. Expected ${totalGoals} total goals. ${pct}% chance it stays under 3.5 goals.`,
+        'btts': `${home} expected to score ${homeGoals} goals, ${away} expected ${awayGoals}. Both sides likely to get on the scoresheet — ${pct}% chance both teams score.`,
+        'btts_over_2.5': `Both teams to score AND 3+ goals — our model puts this at ${pct}%. A lively game expected with ${totalGoals} goals forecast.`,
+        'btts_under_2.5': `Both score but it stays tight — ${pct}% probability. A cagey game with goals from both sides.`,
+        'btts_home_win': `${home} to win while both teams score — ${pct}% chance. ${home} have the attacking edge but ${away} will contribute.`,
+        'btts_away_win': `${away} to win while both teams score — ${pct}% chance. ${away} show stronger form but ${home} will get a goal.`,
+        'home_over_1.5': `${home} expected to score around ${homeGoals} goals. ${pct}% chance they hit at least 2.`,
+        'away_over_1.5': `${away} expected to score around ${awayGoals} goals. ${pct}% chance they hit at least 2.`,
+        'home_under_3.5': `${home} unlikely to run up a cricket score here. ${pct}% chance they stay under 3.5 goals.`,
+        'away_under_3.5': `${away} are unlikely to go on a scoring rampage. ${pct}% chance they stay under 3.5 goals.`,
+        'result_home': `${home} are the stronger side here — expected ${homeGoals} goals vs ${awayGoals} for ${away}. ${pct}% chance of a home win.`,
+        'result_draw': `Very evenly matched. Our model gives ${pct}% chance of a draw based on both teams' attacking and defensive records.`,
+        'result_away': `${away} look the sharper side — expected ${awayGoals} goals vs ${homeGoals} for ${home}. ${pct}% chance of an away win.`,
+        'correct_score': `Our model's top scoreline based on thousands of simulations — ${pct}% probability.`,
+        '1h_over_1.5': `${pct}% chance of at least 2 goals in the first half — both teams tend to start quickly.`,
+        '1h_over_2.5': `${pct}% chance of 3+ goals before half time. Expect an open, attacking first half.`,
+        '1h_under_0.5': `${pct}% chance the first half stays goalless — expect a slow, tactical opening.`,
+        '1h_under_1.5': `${pct}% chance of at most 1 goal in the first half — these teams typically take time to open up.`,
     };
 
-    return reasonings[marketId] || `Model: ${pct}% probability with ${edgePct}% edge.`;
+    return reasonings[marketId] || `Our model gives this a ${pct}% chance${parseFloat(edgePct) > 0 ? ` — ${edgePct}% better odds than the bookmakers are offering` : ''}.`;
 }
 
 function generateInsight(
     home: string, away: string, lH: number, lA: number,
-    confidence: number, topMarket?: AnalysisMarket,
+    confidence: number, topMarket?: AnalysisMarket | null,
 ): string {
     const total = lH + lA;
-    const profile = total > 3.0 ? "high-scoring" : total > 2.2 ? "moderate-tempo" : "defensive";
-    const dominance = lH > lA * 1.3 ? `${home} hold a significant attacking advantage` :
-        lA > lH * 1.3 ? `${away} show stronger offensive metrics` :
-            "Both sides show balanced attacking threat";
+    const homeGoals = lH.toFixed(1);
+    const awayGoals = lA.toFixed(1);
+    const totalGoals = total.toFixed(1);
 
-    let text = `Quantitative analysis projects a ${profile} contest (λH: ${lH.toFixed(2)}, λA: ${lA.toFixed(2)}). ${dominance} based on attack-defense strength differentials. `;
+    // Describe the match profile in plain terms
+    const profile = total > 3.0
+        ? "an open, high-scoring contest"
+        : total > 2.4
+            ? "a moderately attacking game"
+            : "a tight, defensive battle";
 
-    if (topMarket?.isValue) {
-        text += `Primary signal: ${topMarket.label} at +${(topMarket.edge * 100).toFixed(1)}% edge vs. ${topMarket.odds?.toFixed(2)} bookmaker odds. Model confidence: ${confidence}%.`;
+    // Describe which team has the edge
+    const dominance = lH > lA * 1.25
+        ? `${home} have the stronger attack — they're expected to score around ${homeGoals} goals`
+        : lA > lH * 1.25
+            ? `${away} look the more dangerous side — expected to score around ${awayGoals} goals`
+            : `Both teams are evenly matched — ${home} expected ${homeGoals} goals, ${away} expected ${awayGoals} goals`;
+
+    let text = `This looks like ${profile}. We're projecting a total of ${totalGoals} goals. ${dominance}. `;
+
+    // Explain the best verdict in plain language
+    if (topMarket && topMarket.edge > 0) {
+        const odds = topMarket.odds?.toFixed(2) ?? "—";
+        const edgePct = (topMarket.edge * 100).toFixed(1);
+        const impliedPct = topMarket.odds ? Math.round(100 / topMarket.odds) : null;
+        const modelPct = topMarket.probability;
+
+        text += `Best opportunity: **${topMarket.label}**. `;
+
+        if (impliedPct) {
+            text += `Bookmakers give this a ${impliedPct}% chance (odds ${odds}), but our model puts it at ${modelPct}% — that's a ${edgePct}% gap in your favour. `;
+        } else {
+            text += `Our model gives this ${modelPct}% probability at odds of ${odds}, giving you a ${edgePct}% edge over the market. `;
+        }
+
+        // Add a simple confidence close
+        if (confidence >= 75) {
+            text += `We have high confidence in this projection.`;
+        } else if (confidence >= 55) {
+            text += `Moderate confidence — worth considering alongside the market context.`;
+        } else {
+            text += `Lower confidence match — treat as speculative.`;
+        }
     } else if (topMarket) {
-        text += `Primary signal: ${topMarket.label} at ${topMarket.probability}% model probability. Confidence level: ${confidence}%.`;
+        text += `Top signal: ${topMarket.label} at ${topMarket.probability}% model probability. No clear edge over the market found — odds appear fairly priced.`;
     }
+
     return text;
 }
 
@@ -285,7 +328,15 @@ export async function GET(request: Request) {
             });
         }
 
-        markets.sort((a, b) => b.probability - a.probability);
+        // Hard filter: don't return any market with odds < 1.60 (ODDS_DISPLAY_MIN)
+        const displayMarkets = markets.filter(m => !m.odds || m.odds >= ENGINE_CONFIG.ODDS_DISPLAY_MIN);
+        displayMarkets.sort((a, b) => b.probability - a.probability);
+
+        // Derive top pick — highest edge market with real odds >= 1.60 AND positive edge
+        // Never show a Best Verdict with negative edge — hide the card entirely if none qualify
+        const topPick = [...displayMarkets]
+            .filter(m => m.odds !== null && m.odds >= ENGINE_CONFIG.ODDS_DISPLAY_MIN && m.edge > 0)
+            .sort((a, b) => b.edge - a.edge)[0] || null;
 
         const topScore = probs.correct_scores[0];
         const predictedScore = topScore ? `${topScore.home}-${topScore.away}` : "1-1";
@@ -298,10 +349,11 @@ export async function GET(request: Request) {
             { name: "Volatility Rating", value: 20 + (fixtureId % 20), rating: "Low", explanation: "Score stability from concession rates.", tooltip: "Low volatility = predictable outcomes. Favors Under markets and low-risk plays." },
         ];
 
-        const topMarket = [...markets].filter(m => m.isValue && m.odds).sort((a, b) => b.edge - a.edge)[0] || markets[0];
+        const topMarket = topPick || displayMarkets[0] || null;
 
         const response: AnalysisResponse = {
-            markets,
+            markets: displayMarkets,
+            topPick,
             summary: {
                 confidence,
                 insightText: generateInsight(homeTeam, awayTeam, lambdaHome, lambdaAway, confidence, topMarket),

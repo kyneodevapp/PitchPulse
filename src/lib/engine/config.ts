@@ -9,12 +9,12 @@
 // ============ EDGE ENGINE THRESHOLDS ============
 
 export const ENGINE_CONFIG = {
-    ODDS_MIN: 1.40,                   // Evaluate markets down to 1.40 (display floor is separate)
+    ODDS_MIN: 1.50,                   // Evaluate markets down to 1.50 (internal floor for candidate selection)
     ODDS_MAX: 10.20,
-    ODDS_DISPLAY_MIN: 1.20,           // Hard UI floor — never display below this
-    MIN_EDGE_PCT: 0.02,               // 2% minimum edge over implied probability
+    ODDS_DISPLAY_MIN: 1.60,           // Hard UI floor — NEVER display below 1.60
+    MIN_EDGE_PCT: 0.05,               // 5% minimum edge over implied probability (raised from 2%)
     MIN_EV_THRESHOLD: 0.02,           // +2% minimum expected value
-    MIN_CONFIDENCE: 45,               // Minimum confidence score (0-100)
+    MIN_CONFIDENCE: 55,               // Minimum confidence score (raised from 45)
     MAX_PICKS_PER_DAY: 20,            // Cap total daily output
 } as const;
 
@@ -93,22 +93,68 @@ export const POISSON_CONFIG = {
 // ============ PER-LEAGUE HOME ADVANTAGE ============
 
 export const LEAGUE_HOME_ADVANTAGES: Record<number, number> = {
+    // European
     2: 1.10,    // Champions League
-    5: 1.08,    // Europa League  
+    5: 1.08,    // Europa League
+    2286: 1.07, // Europa Conference League
+    // England
     8: 1.09,    // Premier League
     9: 1.07,    // Championship
+    24: 1.06,   // FA Cup (neutral venues common)
+    27: 1.06,   // Carabao Cup (neutral venues common)
+    // Spain
     564: 1.12,  // La Liga
     567: 1.10,  // La Liga 2
+    570: 1.06,  // Copa Del Rey
+    // Germany
     82: 1.10,   // Bundesliga
+    // Italy
     384: 1.11,  // Serie A
     387: 1.09,  // Serie B
+    390: 1.06,  // Coppa Italia
+    // France
     301: 1.08,  // Ligue 1
+    // Netherlands
     72: 1.09,   // Eredivisie
-    501: 1.12,  // Scottish Premiership
+    // Portugal
     462: 1.10,  // Liga Portugal
+    // Scotland
+    501: 1.12,  // Scottish Premiership (strong home advantage)
+    // Turkey
     600: 1.14,  // Süper Lig (strong home advantage)
+    // Belgium
     208: 1.09,  // Belgian Pro League
+    // Austria
+    181: 1.09,  // Admiral Bundesliga
+    // Denmark
+    271: 1.08,  // Superliga
+    // Greece
+    591: 1.11,  // Super League
 };
+
+// ============ DEFENSIVE LEAGUES ============
+// These leagues have lower goal averages — BTTS calibration boost is reduced for them
+
+export const DEFENSIVE_LEAGUE_IDS = new Set([
+    301,   // Ligue 1 (avg ~2.4 goals)
+    384,   // Serie A (avg ~2.5 goals)
+    387,   // Serie B
+    208,   // Belgian Pro League
+    501,   // Scottish Premiership
+    567,   // La Liga 2
+    271,   // Danish Superliga
+]);
+
+// ============ HIGH-SCORING LEAGUES ============
+// BTTS full 1.15 calibration boost applies to these leagues
+
+export const HIGH_SCORING_LEAGUE_IDS = new Set([
+    8,     // Premier League (avg ~2.8 goals)
+    82,    // Bundesliga (avg ~3.0 goals)
+    72,    // Eredivisie (avg ~3.1 goals)
+    564,   // La Liga
+    600,   // Süper Lig
+]);
 
 // ============ VARIANCE MULTIPLIERS ============
 
@@ -118,9 +164,6 @@ export const VARIANCE_MULTIPLIERS: Record<string, number> = {
     'over_3.5': 0.90,
     'under_1.5': 1.00,
     'under_2.5': 1.00,
-    // Draw No Bet
-    'draw_no_bet': 0.93,
-    'draw_no_bet_away': 0.93,
     // BTTS + Result
     'btts_home_win': 0.88,
     'btts_away_win': 0.88,
@@ -156,6 +199,7 @@ export function getVarianceMultiplier(marketId: string, odds: number): number {
 // Corrects known Poisson model biases per market type.
 // Poisson underestimates high-scoring outcomes → boost Over/BTTS
 // Poisson overestimates low-scoring outcomes → shrink Under
+// NOTE: BTTS calibration is league-aware — see getBTTSCalibrationFactor()
 export const PROBABILITY_CALIBRATION: Record<string, number> = {
     // Over markets — Poisson underestimates, boost
     'over_2.5': 1.15,
@@ -163,10 +207,10 @@ export const PROBABILITY_CALIBRATION: Record<string, number> = {
     // Under markets — Poisson overestimates, shrink
     'under_1.5': 0.82,
     'under_2.5': 0.88,
-    // BTTS — typically underestimated, boost
+    // BTTS — base value, overridden per league by getBTTSCalibrationFactor
     'btts': 1.15,
     'btts_no': 0.88,
-    // BTTS combos
+    // BTTS combos — base values
     'btts_over_2.5': 1.18,
     'btts_over_3.5': 1.22,
     'btts_under_1.5': 0.80,
@@ -174,9 +218,6 @@ export const PROBABILITY_CALIBRATION: Record<string, number> = {
     // BTTS + Result
     'btts_home_win': 1.15,
     'btts_away_win': 1.15,
-    // DNB — reduce to prevent dominance
-    'draw_no_bet': 0.82,
-    'draw_no_bet_away': 0.82,
     // 1st Half
     '1h_over_1.5': 1.12,
     '1h_over_2.5': 1.15,
@@ -187,6 +228,18 @@ export const PROBABILITY_CALIBRATION: Record<string, number> = {
 /** Get calibration factor for a market. Returns 1.0 if none defined. */
 export function getCalibrationFactor(marketId: string): number {
     return PROBABILITY_CALIBRATION[marketId] ?? 1.0;
+}
+
+/**
+ * Get league-aware BTTS calibration factor.
+ * High scoring leagues: full 1.15 boost.
+ * Defensive leagues: reduced 1.05 boost (avoids over-prediction).
+ * Neutral leagues: standard 1.10 boost.
+ */
+export function getBTTSCalibrationFactor(leagueId: number): number {
+    if (HIGH_SCORING_LEAGUE_IDS.has(leagueId)) return 1.15;
+    if (DEFENSIVE_LEAGUE_IDS.has(leagueId)) return 1.05;
+    return 1.10; // Neutral default
 }
 
 // ============ CONFIDENCE MODEL WEIGHTS ============
@@ -228,4 +281,19 @@ export const MIN_BOOKMAKER_COUNT = 2;
 
 // ============ LEAGUE IDS ============
 
-export const SUPPORTED_LEAGUE_IDS = [2, 5, 8, 9, 564, 567, 82, 384, 387, 301, 72, 501, 462, 600, 208] as const;
+export const SUPPORTED_LEAGUE_IDS = [
+    2, 5, 2286,           // European
+    8, 9, 24, 27,         // England
+    564, 567, 570,        // Spain
+    82,                   // Germany
+    384, 387, 390,        // Italy
+    301,                  // France
+    72,                   // Netherlands
+    462,                  // Portugal
+    501,                  // Scotland
+    600,                  // Turkey
+    208,                  // Belgium
+    181,                  // Austria
+    271,                  // Denmark
+    591,                  // Greece
+] as const;

@@ -14,7 +14,7 @@
  *   10. Final validation & immutable publication
  */
 
-import { ENGINE_CONFIG, CONFIDENCE_WEIGHTS, getCalibrationFactor } from './config';
+import { ENGINE_CONFIG, CONFIDENCE_WEIGHTS, getCalibrationFactor, getBTTSCalibrationFactor } from './config';
 import {
     calculateStrength,
     computeLambdas,
@@ -357,8 +357,18 @@ export function processMatch(
         // Blend: 40% Poisson + 60% Monte Carlo
         probability = blendProbabilities(poissonProb, mcProb);
 
-        // Calibrate: correct systematic Poisson bias per market type
-        const calibration = getCalibrationFactor(market.id);
+        // Calibrate: correct systematic Poisson bias per market type.
+        // BTTS markets use league-aware calibration to prevent over-prediction in defensive leagues.
+        let calibration: number;
+        const isBTTSMarket = market.id.startsWith('btts');
+        if (isBTTSMarket) {
+            const bttsBase = getBTTSCalibrationFactor(input.leagueId);
+            // Scale BTTS combos relative to the base BTTS boost
+            const baseRatio = getCalibrationFactor(market.id) / 1.15; // normalize against default
+            calibration = bttsBase * baseRatio;
+        } else {
+            calibration = getCalibrationFactor(market.id);
+        }
         probability = Math.min(0.95, Math.max(0.01, probability * calibration));
 
         // Find odds

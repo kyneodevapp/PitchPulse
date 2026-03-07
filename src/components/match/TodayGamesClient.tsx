@@ -57,14 +57,17 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
 
     return (
         <div className="space-y-6">
-            <CommandBar
-                selectedDate={selectedDate || ""}
-                onDateChange={handleDateChange}
-                availableDates={availableDates}
-                activeLeagueId={activeLeagueId}
-                onLeagueChange={setActiveLeagueId}
-                leagues={SUPPORTED_LEAGUES}
-            />
+            {/* Sticky command bar — visible while scrolling */}
+            <div className="sticky top-20 z-30 -mx-4 px-4 pb-3 pt-1 bg-[#0B0F14]/90 backdrop-blur-xl border-b border-[#1F2937]/40">
+                <CommandBar
+                    selectedDate={selectedDate || ""}
+                    onDateChange={handleDateChange}
+                    availableDates={availableDates}
+                    activeLeagueId={activeLeagueId}
+                    onLeagueChange={setActiveLeagueId}
+                    leagues={SUPPORTED_LEAGUES}
+                />
+            </div>
 
             <AnimatePresence mode="wait">
                 <motion.div
@@ -94,10 +97,16 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
                                         if (leagueMatches.length === 0) return null;
 
                                         return (
-                                            <div key={league.id} className="space-y-6">
-                                                <div className="flex items-center gap-4">
-                                                    <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em]">{league.name}</h4>
-                                                    <div className="flex-1 h-[1px] bg-[#1F2937]" />
+                                            <div key={league.id} className="space-y-5">
+                                                {/* League header */}
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-4 rounded-full bg-amber-400/60" />
+                                                        <h4 className="text-[10px] font-black text-white/80 uppercase tracking-[0.25em]">{league.name}</h4>
+                                                        <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest">{league.country}</span>
+                                                    </div>
+                                                    <div className="flex-1 h-[1px] bg-gradient-to-r from-[#1F2937] to-transparent" />
+                                                    <span className="text-[8px] font-bold text-neutral-700">{leagueMatches.length} pick{leagueMatches.length !== 1 ? 's' : ''}</span>
                                                 </div>
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

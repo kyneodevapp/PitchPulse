@@ -63,22 +63,6 @@ export const MARKET_WHITELIST: MarketDefinition[] = [
         sportmonksLabel: 'Under', sportmonksName: '2.5',
     },
 
-    // ===== Draw No Bet =====
-    {
-        id: 'draw_no_bet', label: '{home} (DNB)',
-        probKey: 'home_win',  // Use raw win prob — normalized dnb_home inflates edge
-        sportmonksMarketIds: [SPORTMONKS_MARKETS.DRAW_NO_BET],
-        sportmonksLabel: '1',
-        isTeamSpecific: true, teamSide: 'home',
-    },
-    {
-        id: 'draw_no_bet_away', label: '{away} (DNB)',
-        probKey: 'away_win',  // Use raw win prob — normalized dnb_away inflates edge
-        sportmonksMarketIds: [SPORTMONKS_MARKETS.DRAW_NO_BET],
-        sportmonksLabel: '2',
-        isTeamSpecific: true, teamSide: 'away',
-    },
-
     // ===== BTTS + Result =====
     {
         id: 'btts_home_win', label: '{home} & BTTS',

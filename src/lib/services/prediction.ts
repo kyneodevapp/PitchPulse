@@ -296,7 +296,36 @@ class SportMonksService {
     private oddsBaseUrl = "https://api.sportmonks.com/v3/football";
     private footballDataBaseUrl = "https://api.football-data.org/v4";
 
-    private LEAGUE_IDS = [2, 5, 8, 9, 564, 567, 82, 384, 387, 301, 72, 501, 462, 600, 208];
+    private LEAGUE_IDS = [
+        // European
+        2, 5, 2286,
+        // England
+        8, 9, 24, 27,
+        // Spain
+        564, 567, 570,
+        // Germany
+        82,
+        // Italy
+        384, 387, 390,
+        // France
+        301,
+        // Netherlands
+        72,
+        // Portugal
+        462,
+        // Scotland
+        501,
+        // Turkey
+        600,
+        // Belgium
+        208,
+        // Austria
+        181,
+        // Denmark
+        271,
+        // Greece
+        591,
+    ];
 
     // In-memory standings cache: seasonId -> { timestamp, data }
     private standingsCache: Map<number, { timestamp: number; teams: Map<number, TeamStats> }> = new Map();
@@ -917,11 +946,11 @@ class SportMonksService {
                 // Check immutable history first (Now from pre-fetched Map)
                 const existing = historyMap.get(f.id);
                 if (existing) {
-                    // Skip stale predictions (older than 12 hours) to force regeneration
+                    // Skip stale predictions (older than 3 hours) to force regeneration
                     // with current engine data, ensuring all metrics are populated.
-                    // Frozen (settled) predictions are never skipped.
+                    // Frozen (settled) predictions are NEVER skipped — they are immutable.
                     const publishedAge = Date.now() - new Date(existing.published_at).getTime();
-                    const STALE_THRESHOLD = 12 * 60 * 60 * 1000; // 12 hours
+                    const STALE_THRESHOLD = 3 * 60 * 60 * 1000; // 3 hours
                     if (!existing.is_frozen && publishedAge > STALE_THRESHOLD) {
                         // Fall through to engine pipeline below
                     } else {
