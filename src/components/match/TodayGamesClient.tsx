@@ -58,7 +58,7 @@ export function TodayGamesClient({ initialMatches }: TodayGamesClientProps) {
     return (
         <div className="space-y-6">
             {/* Sticky command bar — visible while scrolling */}
-            <div className="sticky top-20 z-30 -mx-4 px-4 pb-3 pt-1 bg-[#0B0F14]/90 backdrop-blur-xl border-b border-[#1F2937]/40">
+            <div className="sticky top-20 z-30 -mx-4 px-4 pb-3 pt-1 bg-[#0B0F14]/95 backdrop-blur-sm border-b border-[#1F2937]/40">
                 <CommandBar
                     selectedDate={selectedDate || ""}
                     onDateChange={handleDateChange}
